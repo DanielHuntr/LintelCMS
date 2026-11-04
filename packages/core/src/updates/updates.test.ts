@@ -5,7 +5,7 @@ import type { FastifyInstance } from "fastify";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { DEFAULT_EMAIL_FROM } from "../email/email.config.js";
 import { createEmailSender, OutboxEmailDriver } from "../email/index.js";
-import { useTestDatabase } from "../testing/test-database.js";
+import { testDatabaseUrl, useTestDatabase } from "../testing/test-database.js";
 import { createPersonWithRole } from "../testing/test-people.js";
 import {
   fetchServing,
@@ -199,49 +199,84 @@ describe("Settings → Updates", { timeout: 60_000 }, () => {
     expect(scheduled.problem).toContain("It will try again tomorrow.");
   });
 
-  it("only lets owners update, after confirming, and logs it in the security log", async () => {
-    const admin = await as("admin@example.com", "admin");
-    const owner = await as("owner@example.com", "owner");
-    await owner("POST", "/updates/check");
+  // The test release has no migrations to compare, so a Postgres server refuses it, as below.
+  it.skipIf(testDatabaseUrl)(
+    "only lets owners update, after confirming, and logs it in the security log",
+    async () => {
+      const admin = await as("admin@example.com", "admin");
+      const owner = await as("owner@example.com", "owner");
+      await owner("POST", "/updates/check");
 
-    expect(
-      (await admin("POST", "/updates/install", { version: "1.1.0", confirmed: true })).json(),
-    ).toMatchObject({
-      code: "OWNERS_ONLY",
-    });
-    expect((await owner("POST", "/updates/install", { version: "1.1.0" })).statusCode).toBe(400);
-    expect(
-      (await owner("POST", "/updates/install", { version: "9.0.0", confirmed: true })).statusCode,
-    ).toBe(404);
+      expect(
+        (await admin("POST", "/updates/install", { version: "1.1.0", confirmed: true })).json(),
+      ).toMatchObject({
+        code: "OWNERS_ONLY",
+      });
+      expect((await owner("POST", "/updates/install", { version: "1.1.0" })).statusCode).toBe(400);
+      expect(
+        (await owner("POST", "/updates/install", { version: "9.0.0", confirmed: true })).statusCode,
+      ).toBe(404);
 
-    const started = await owner("POST", "/updates/install", { version: "1.1.0", confirmed: true });
-    expect(started.statusCode).toBe(202);
-    // The download comes first; the backup is made after it, just before the switch.
-    expect(started.json<UpdateProgress>().step).toBe("downloading");
-    expect(
-      (await owner("POST", "/updates/install", { version: "1.1.0", confirmed: true })).statusCode,
-    ).toBe(409);
+      const started = await owner("POST", "/updates/install", {
+        version: "1.1.0",
+        confirmed: true,
+      });
+      expect(started.statusCode).toBe(202);
+      // The download comes first; the backup is made after it, just before the switch.
+      expect(started.json<UpdateProgress>().step).toBe("downloading");
+      expect(
+        (await owner("POST", "/updates/install", { version: "1.1.0", confirmed: true })).statusCode,
+      ).toBe(409);
 
-    await expect.poll(() => asked.length, { timeout: 30_000 }).toBe(1);
-    expect(asked[0]).toMatchObject({ kind: "update", version: "1.1.0", restoreBackupFirst: false });
-    expect(asked[0]?.backupFile).toMatch(/lintel-backup-.*\.zip$/);
-    const progress = (await owner("GET", "/updates/progress")).json<{ progress: UpdateProgress }>();
-    expect(progress.progress).toMatchObject({ step: "maintenance", version: "1.1.0" });
-    expect((await admin("GET", "/updates/status")).json()).toEqual({
-      updating: true,
-      version: "1.1.0",
-    });
+      await expect.poll(() => asked.length, { timeout: 30_000 }).toBe(1);
+      expect(asked[0]).toMatchObject({
+        kind: "update",
+        version: "1.1.0",
+        restoreBackupFirst: false,
+      });
+      expect(asked[0]?.backupFile).toMatch(/lintel-backup-.*\.zip$/);
+      const progress = (await owner("GET", "/updates/progress")).json<{
+        progress: UpdateProgress;
+      }>();
+      expect(progress.progress).toMatchObject({ step: "maintenance", version: "1.1.0" });
+      expect((await admin("GET", "/updates/status")).json()).toEqual({
+        updating: true,
+        version: "1.1.0",
+      });
 
-    const log = (await owner("GET", "/security-log?kind=lintel-update-started")).json<{
-      events: Array<{ kind: string; details: Record<string, unknown> }>;
-    }>();
-    expect(log.events).toEqual([
-      expect.objectContaining({
-        kind: "lintel-update-started",
-        details: { from: "1.0.0", to: "1.1.0" },
-      }),
-    ]);
-  });
+      const log = (await owner("GET", "/security-log?kind=lintel-update-started")).json<{
+        events: Array<{ kind: string; details: Record<string, unknown> }>;
+      }>();
+      expect(log.events).toEqual([
+        expect.objectContaining({
+          kind: "lintel-update-started",
+          details: { from: "1.0.0", to: "1.1.0" },
+        }),
+      ]);
+    },
+  );
+
+  it.runIf(testDatabaseUrl)(
+    "refuses an update it can't be sure leaves a Postgres server's database alone",
+    async () => {
+      releases = [await makeTestRelease(key, "1.1.0")];
+      await startServer();
+      const owner = await as("owner@example.com", "owner");
+      await owner("POST", "/updates/check");
+
+      await owner("POST", "/updates/install", { version: "1.1.0", confirmed: true });
+
+      await expect
+        .poll(
+          async () =>
+            (await owner("GET", "/updates/progress")).json<{ progress: UpdateProgress }>().progress
+              .step,
+          { timeout: 30_000 },
+        )
+        .toBe("failed");
+      expect(asked).toEqual([]);
+    },
+  );
 
   it("reports a tampered download as a failure and asks nothing of the supervisor", async () => {
     releases = [await makeTestRelease(key, "1.1.0", { tamperWithBuild: true })];

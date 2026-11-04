@@ -4,6 +4,8 @@
  * and by the setup screen's "test connection" button.
  */
 
+import { UNIQUE_VIOLATION_CODES } from "./dialect/database-errors.js";
+
 /** Which kind of problem it is, so the setup screen can point at the right field. */
 export type DatabaseProblem = "unreachable" | "auth-failed" | "not-found" | "invalid";
 
@@ -194,7 +196,8 @@ function invalid(message: string): DescribedDatabaseError {
  * turn a lost race ("someone took that handle a moment ago") into a plain message.
  */
 export function isUniqueViolation(error: unknown, indexName?: string): boolean {
-  if (findErrorCode(error) !== "23505") {
+  const code = findErrorCode(error);
+  if (code === undefined || !UNIQUE_VIOLATION_CODES.includes(code)) {
     return false;
   }
   return indexName === undefined || mentionsConstraint(error, indexName);

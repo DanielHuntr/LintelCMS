@@ -1,6 +1,8 @@
 import { and, eq } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../database/client.js";
-import { settingsTable } from "./settings.table.js";
+import { settingsTable as settingsDefinition } from "./settings.table.js";
+import { insertIfNewReturning, upsert } from "../database/dialect/writes.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /** Database reads and writes for settings, nothing else. Values are checked by the service. */
 
@@ -9,6 +11,7 @@ export async function findSettingValue(
   tenantId: string,
   key: string,
 ): Promise<unknown> {
+  const settingsTable = tableFor(database, settingsDefinition);
   const [setting] = await database
     .select({ value: settingsTable.value })
     .from(settingsTable)
@@ -23,6 +26,7 @@ export async function findSettingUpdatedAt(
   tenantId: string,
   key: string,
 ): Promise<Date | null> {
+  const settingsTable = tableFor(database, settingsDefinition);
   const [setting] = await database
     .select({ updatedAt: settingsTable.updatedAt })
     .from(settingsTable)
@@ -38,11 +42,14 @@ export async function insertSettingValueIfMissing(
   key: string,
   value: unknown,
 ): Promise<boolean> {
-  const inserted = await database
-    .insert(settingsTable)
-    .values({ tenantId, key, value })
-    .onConflictDoNothing({ target: [settingsTable.tenantId, settingsTable.key] })
-    .returning({ id: settingsTable.id });
+  const settingsTable = tableFor(database, settingsDefinition);
+  const inserted = await insertIfNewReturning(
+    database,
+    settingsTable,
+    { tenantId, key, value },
+    { target: [settingsTable.tenantId, settingsTable.key] },
+    { id: settingsTable.id },
+  );
   return inserted.length > 0;
 }
 
@@ -52,6 +59,7 @@ export async function deleteSettingValue(
   tenantId: string,
   key: string,
 ): Promise<void> {
+  const settingsTable = tableFor(database, settingsDefinition);
   await database
     .delete(settingsTable)
     .where(and(eq(settingsTable.tenantId, tenantId), eq(settingsTable.key, key)));
@@ -63,11 +71,14 @@ export async function upsertSettingValue(
   key: string,
   value: unknown,
 ): Promise<void> {
-  await database
-    .insert(settingsTable)
-    .values({ tenantId, key, value })
-    .onConflictDoUpdate({
+  const settingsTable = tableFor(database, settingsDefinition);
+  await upsert(
+    database,
+    settingsTable,
+    { tenantId, key, value },
+    {
       target: [settingsTable.tenantId, settingsTable.key],
       set: { value, updatedAt: new Date() },
-    });
+    },
+  );
 }

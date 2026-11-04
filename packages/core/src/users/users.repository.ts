@@ -1,7 +1,10 @@
-import { and, asc, eq, ilike, inArray, or, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, or, sql } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../database/client.js";
-import { sessionsTable } from "../sessions/sessions.table.js";
-import { type NewUser, type User, usersTable } from "./users.table.js";
+import { sessionsTable as sessionsDefinition } from "../sessions/sessions.table.js";
+import { type NewUser, type User, usersTable as usersDefinition } from "./users.table.js";
+import { insertReturning, updateReturning } from "../database/dialect/writes.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
+import { likeIgnoringCase } from "../database/dialect/expressions.js";
 
 /** Database reads and writes for users, nothing else. */
 
@@ -10,6 +13,7 @@ export async function findUserByEmail(
   tenantId: string,
   email: string,
 ): Promise<User | undefined> {
+  const usersTable = tableFor(database, usersDefinition);
   const [user] = await database
     .select()
     .from(usersTable)
@@ -22,6 +26,7 @@ export async function findUserById(
   database: DatabaseOrTransaction,
   userId: string,
 ): Promise<User | undefined> {
+  const usersTable = tableFor(database, usersDefinition);
   const [user] = await database.select().from(usersTable).where(eq(usersTable.id, userId)).limit(1);
   return user;
 }
@@ -31,6 +36,7 @@ export async function findExistingUserIds(
   database: DatabaseOrTransaction,
   userIds: readonly string[],
 ): Promise<string[]> {
+  const usersTable = tableFor(database, usersDefinition);
   if (userIds.length === 0) {
     return [];
   }
@@ -46,6 +52,7 @@ export async function findUserNamesByIds(
   database: DatabaseOrTransaction,
   userIds: readonly string[],
 ): Promise<{ id: string; name: string }[]> {
+  const usersTable = tableFor(database, usersDefinition);
   if (userIds.length === 0) {
     return [];
   }
@@ -56,7 +63,8 @@ export async function findUserNamesByIds(
 }
 
 export async function insertUser(database: DatabaseOrTransaction, user: NewUser): Promise<User> {
-  const [inserted] = await database.insert(usersTable).values(user).returning();
+  const usersTable = tableFor(database, usersDefinition);
+  const [inserted] = await insertReturning(database, usersTable, user);
   if (!inserted) {
     throw new Error("The database did not return the new user.");
   }
@@ -68,6 +76,7 @@ export async function recordSignIn(
   userId: string,
   now: Date,
 ): Promise<void> {
+  const usersTable = tableFor(database, usersDefinition);
   await database.update(usersTable).set({ lastSignedInAt: now }).where(eq(usersTable.id, userId));
 }
 
@@ -76,6 +85,7 @@ export async function hasAnyUsers(
   database: DatabaseOrTransaction,
   tenantId: string,
 ): Promise<boolean> {
+  const usersTable = tableFor(database, usersDefinition);
   const [user] = await database
     .select({ id: usersTable.id })
     .from(usersTable)
@@ -88,6 +98,7 @@ export async function listUserEmails(
   database: DatabaseOrTransaction,
   tenantId: string,
 ): Promise<string[]> {
+  const usersTable = tableFor(database, usersDefinition);
   const rows = await database
     .select({ email: usersTable.email })
     .from(usersTable)
@@ -100,6 +111,7 @@ export async function updatePasswordHash(
   userId: string,
   passwordHash: string,
 ): Promise<void> {
+  const usersTable = tableFor(database, usersDefinition);
   await database.update(usersTable).set({ passwordHash }).where(eq(usersTable.id, userId));
 }
 
@@ -113,20 +125,27 @@ export async function listUserRows(
   tenantId: string,
   search: string | undefined,
 ): Promise<UserRowWithActivity[]> {
+  const sessionsTable = tableFor(database, sessionsDefinition);
+  const usersTable = tableFor(database, usersDefinition);
   const pattern = search ? `%${search.replace(/[\\%_]/g, (match) => `\\${match}`)}%` : undefined;
   const rows = await database
     .select({
       user: usersTable,
       lastSessionUsedAt:
         sql<Date | null>`(select max(${sessionsTable.lastUsedAt}) from ${sessionsTable} where ${sessionsTable.userId} = ${usersTable.id})`.mapWith(
-          (value: string | Date | null) => (value === null ? null : new Date(value)),
+          sessionsTable.lastUsedAt,
         ),
     })
     .from(usersTable)
     .where(
       and(
         eq(usersTable.tenantId, tenantId),
-        pattern ? or(ilike(usersTable.name, pattern), ilike(usersTable.email, pattern)) : undefined,
+        pattern
+          ? or(
+              likeIgnoringCase(database, usersTable.name, pattern),
+              likeIgnoringCase(database, usersTable.email, pattern),
+            )
+          : undefined,
       ),
     )
     .orderBy(asc(usersTable.name));
@@ -138,14 +157,12 @@ export async function updateUserRow(
   userId: string,
   changes: Partial<Pick<User, "name" | "email" | "status" | "deactivatedAt" | "avatarAssetId">>,
 ): Promise<User | undefined> {
-  const [updated] = await database
-    .update(usersTable)
-    .set(changes)
-    .where(eq(usersTable.id, userId))
-    .returning();
+  const usersTable = tableFor(database, usersDefinition);
+  const [updated] = await updateReturning(database, usersTable, changes, eq(usersTable.id, userId));
   return updated;
 }
 
 export async function deleteUserRow(database: DatabaseOrTransaction, userId: string) {
+  const usersTable = tableFor(database, usersDefinition);
   await database.delete(usersTable).where(eq(usersTable.id, userId));
 }

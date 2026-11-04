@@ -1,6 +1,6 @@
 import type { DatabaseOrTransaction } from "../../database/client.js";
 import { DEFAULT_TENANT_ID } from "../../database/columns.js";
-import { findErrorCode } from "../../database/database-errors.js";
+import { isUniqueViolation } from "../../database/database-errors.js";
 import { ShopRecordNotFoundError } from "../commerce.errors.js";
 import { DiscountCodeTakenError } from "./discounts.errors.js";
 import {
@@ -167,7 +167,7 @@ async function saveRefusingTakenCode<Result>(
   try {
     return await save();
   } catch (error) {
-    if (code && findErrorCode(error) === "23505") throw new DiscountCodeTakenError(code);
+    if (code && isUniqueViolation(error)) throw new DiscountCodeTakenError(code);
     throw error;
   }
 }

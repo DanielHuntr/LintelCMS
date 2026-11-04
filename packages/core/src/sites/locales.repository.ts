@@ -1,7 +1,13 @@
 import { and, asc, eq, getTableColumns, sql } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../database/client.js";
-import { entriesTable } from "../entries/entries.table.js";
-import { type NewSiteLocale, type SiteLocale, siteLocalesTable } from "./locales.table.js";
+import { entriesTable as entriesDefinition } from "../entries/entries.table.js";
+import {
+  type NewSiteLocale,
+  type SiteLocale,
+  siteLocalesTable as siteLocalesDefinition,
+} from "./locales.table.js";
+import { insertIfNewReturning } from "../database/dialect/writes.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /** Database reads and writes for a site's locales, nothing else. */
 
@@ -15,6 +21,8 @@ export async function listSiteLocales(
   database: DatabaseOrTransaction,
   siteId: string,
 ): Promise<SiteLocaleWithCount[]> {
+  const entriesTable = tableFor(database, entriesDefinition);
+  const siteLocalesTable = tableFor(database, siteLocalesDefinition);
   return database
     .select({
       ...getTableColumns(siteLocalesTable),
@@ -35,6 +43,7 @@ export async function findSiteLocale(
   siteId: string,
   code: string,
 ): Promise<SiteLocale | undefined> {
+  const siteLocalesTable = tableFor(database, siteLocalesDefinition);
   const [locale] = await database
     .select()
     .from(siteLocalesTable)
@@ -48,11 +57,10 @@ export async function insertSiteLocaleIfMissing(
   database: DatabaseOrTransaction,
   locale: NewSiteLocale,
 ): Promise<SiteLocale | undefined> {
-  const [inserted] = await database
-    .insert(siteLocalesTable)
-    .values(locale)
-    .onConflictDoNothing({ target: [siteLocalesTable.siteId, siteLocalesTable.code] })
-    .returning();
+  const siteLocalesTable = tableFor(database, siteLocalesDefinition);
+  const [inserted] = await insertIfNewReturning(database, siteLocalesTable, locale, {
+    target: [siteLocalesTable.siteId, siteLocalesTable.code],
+  });
   return inserted;
 }
 
@@ -61,6 +69,7 @@ export async function renameSiteLocale(
   localeId: string,
   name: string,
 ): Promise<void> {
+  const siteLocalesTable = tableFor(database, siteLocalesDefinition);
   await database
     .update(siteLocalesTable)
     .set({ name, updatedAt: new Date() })
@@ -71,6 +80,7 @@ export async function deleteSiteLocale(
   database: DatabaseOrTransaction,
   localeId: string,
 ): Promise<void> {
+  const siteLocalesTable = tableFor(database, siteLocalesDefinition);
   await database.delete(siteLocalesTable).where(eq(siteLocalesTable.id, localeId));
 }
 
@@ -79,6 +89,7 @@ export async function countEntriesInLocale(
   siteId: string,
   code: string,
 ): Promise<number> {
+  const entriesTable = tableFor(database, entriesDefinition);
   const [row] = await database
     .select({ count: sql<number>`count(*)`.mapWith(Number) })
     .from(entriesTable)

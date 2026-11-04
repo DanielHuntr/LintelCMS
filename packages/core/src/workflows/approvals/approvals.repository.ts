@@ -1,23 +1,24 @@
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../../database/client.js";
-import { usersTable } from "../../users/users.table.js";
+import { usersTable as usersDefinition } from "../../users/users.table.js";
 import {
   type ApprovalStatus,
   type WorkflowApprovalRow,
-  workflowApprovalsTable,
+  workflowApprovalsTable as workflowApprovalsDefinition,
 } from "../workflows.table.js";
+import { insertIfNewReturning, updateReturning } from "../../database/dialect/writes.js";
+import { tableFor } from "../../database/dialect/mysql-tables.js";
 
 /** Database reads and writes for approval requests, nothing else. */
 
 export async function insertApprovalUnlessDuplicate(
   database: DatabaseOrTransaction,
-  approval: typeof workflowApprovalsTable.$inferInsert,
+  approval: typeof workflowApprovalsDefinition.$inferInsert,
 ): Promise<WorkflowApprovalRow> {
-  const [inserted] = await database
-    .insert(workflowApprovalsTable)
-    .values(approval)
-    .onConflictDoNothing({ target: [workflowApprovalsTable.runId, workflowApprovalsTable.stepId] })
-    .returning();
+  const workflowApprovalsTable = tableFor(database, workflowApprovalsDefinition);
+  const [inserted] = await insertIfNewReturning(database, workflowApprovalsTable, approval, {
+    target: [workflowApprovalsTable.runId, workflowApprovalsTable.stepId],
+  });
   if (inserted) {
     return inserted;
   }
@@ -42,6 +43,7 @@ export async function findApprovalRow(
   tenantId: string,
   approvalId: string,
 ): Promise<WorkflowApprovalRow | undefined> {
+  const workflowApprovalsTable = tableFor(database, workflowApprovalsDefinition);
   const [approval] = await database
     .select()
     .from(workflowApprovalsTable)
@@ -63,13 +65,13 @@ export async function decideApprovalRow(
     decidedAt: Date;
   },
 ): Promise<WorkflowApprovalRow | undefined> {
-  const [decided] = await database
-    .update(workflowApprovalsTable)
-    .set(decision)
-    .where(
-      and(eq(workflowApprovalsTable.id, approvalId), eq(workflowApprovalsTable.status, "pending")),
-    )
-    .returning();
+  const workflowApprovalsTable = tableFor(database, workflowApprovalsDefinition);
+  const [decided] = await updateReturning(
+    database,
+    workflowApprovalsTable,
+    decision,
+    and(eq(workflowApprovalsTable.id, approvalId), eq(workflowApprovalsTable.status, "pending")),
+  );
   return decided;
 }
 
@@ -78,6 +80,7 @@ export async function listPendingApprovalRows(
   tenantId: string,
   roles: string[] | "every role",
 ): Promise<WorkflowApprovalRow[]> {
+  const workflowApprovalsTable = tableFor(database, workflowApprovalsDefinition);
   const conditions = [
     eq(workflowApprovalsTable.tenantId, tenantId),
     eq(workflowApprovalsTable.status, "pending"),
@@ -99,6 +102,8 @@ export async function listApprovalRowsForEntry(
   tenantId: string,
   entryId: string,
 ): Promise<(WorkflowApprovalRow & { decidedByName: string | null })[]> {
+  const usersTable = tableFor(database, usersDefinition);
+  const workflowApprovalsTable = tableFor(database, workflowApprovalsDefinition);
   const rows = await database
     .select({ approval: workflowApprovalsTable, decidedByName: usersTable.name })
     .from(workflowApprovalsTable)

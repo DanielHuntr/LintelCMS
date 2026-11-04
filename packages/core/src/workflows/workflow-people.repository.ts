@@ -1,7 +1,11 @@
 import { and, asc, eq, inArray } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../database/client.js";
-import { rolesTable, userRolesTable } from "../roles/roles.table.js";
-import { usersTable } from "../users/users.table.js";
+import {
+  rolesTable as rolesDefinition,
+  userRolesTable as userRolesDefinition,
+} from "../roles/roles.table.js";
+import { usersTable as usersDefinition } from "../users/users.table.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /**
  * Reads about people that workflows need: who has a role (to notify or ask them), and
@@ -19,6 +23,9 @@ export async function listPeopleWithRole(
   tenantId: string,
   roleHandle: string,
 ): Promise<Person[]> {
+  const rolesTable = tableFor(database, rolesDefinition);
+  const userRolesTable = tableFor(database, userRolesDefinition);
+  const usersTable = tableFor(database, usersDefinition);
   return database
     .selectDistinct({ id: usersTable.id, name: usersTable.name, email: usersTable.email })
     .from(usersTable)
@@ -32,6 +39,8 @@ export async function listRoleHandlesForUser(
   database: DatabaseOrTransaction,
   userId: string,
 ): Promise<string[]> {
+  const rolesTable = tableFor(database, rolesDefinition);
+  const userRolesTable = tableFor(database, userRolesDefinition);
   const rows = await database
     .select({ handle: rolesTable.handle })
     .from(userRolesTable)
@@ -44,6 +53,7 @@ export async function listRoles(
   database: DatabaseOrTransaction,
   tenantId: string,
 ): Promise<{ handle: string; name: string }[]> {
+  const rolesTable = tableFor(database, rolesDefinition);
   return database
     .select({ handle: rolesTable.handle, name: rolesTable.name })
     .from(rolesTable)
@@ -55,6 +65,7 @@ export async function findPeopleByIds(
   database: DatabaseOrTransaction,
   userIds: string[],
 ): Promise<Person[]> {
+  const usersTable = tableFor(database, usersDefinition);
   if (userIds.length === 0) return [];
   return database
     .select({ id: usersTable.id, name: usersTable.name, email: usersTable.email })

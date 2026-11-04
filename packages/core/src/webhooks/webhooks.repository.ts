@@ -1,14 +1,18 @@
-import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
-import { appsTable } from "../apps/apps.table.js";
+import { and, eq, inArray, isNull, sql } from "drizzle-orm";
+import { appsTable as appsDefinition } from "../apps/apps.table.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
-import { usersTable } from "../users/users.table.js";
+import { usersTable as usersDefinition } from "../users/users.table.js";
 import {
   type NewWebhookRow,
-  webhookDeliveriesTable,
+  webhookDeliveriesTable as webhookDeliveriesDefinition,
   type WebhookDeliveryStatus,
   type WebhookRow,
-  webhooksTable,
+  webhooksTable as webhooksDefinition,
 } from "./webhooks.table.js";
+import { deleteReturning, insertReturning } from "../database/dialect/writes.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
+import { jsonListIncludes } from "../database/dialect/expressions.js";
+import { selectNewestPerGroup } from "../database/dialect/reads.js";
 
 /** Database reads and writes for webhooks themselves. Deliveries are in their own file. */
 
@@ -17,7 +21,7 @@ import {
  * listing, changing and deleting: they belong to the app, are shown with it, and are
  * removed by uninstalling it. They are still sent, by `listWebhooksForEvent`.
  */
-function addedInSettings(tenantId: string) {
+function addedInSettings(webhooksTable: typeof webhooksDefinition, tenantId: string) {
   return and(eq(webhooksTable.tenantId, tenantId), isNull(webhooksTable.appId));
 }
 
@@ -29,10 +33,11 @@ export async function listWebhookRows(
   database: DatabaseOrTransaction,
   tenantId: string,
 ): Promise<WebhookWithLastDelivery[]> {
+  const webhooksTable = tableFor(database, webhooksDefinition);
   const webhooks = await database
     .select()
     .from(webhooksTable)
-    .where(addedInSettings(tenantId))
+    .where(addedInSettings(webhooksTable, tenantId))
     .orderBy(webhooksTable.createdAt);
   return attachLastDeliveries(database, webhooks);
 }
@@ -42,10 +47,11 @@ export async function findWebhookRow(
   tenantId: string,
   webhookId: string,
 ): Promise<WebhookWithLastDelivery | undefined> {
+  const webhooksTable = tableFor(database, webhooksDefinition);
   const [webhook] = await database
     .select()
     .from(webhooksTable)
-    .where(and(addedInSettings(tenantId), eq(webhooksTable.id, webhookId)))
+    .where(and(addedInSettings(webhooksTable, tenantId), eq(webhooksTable.id, webhookId)))
     .limit(1);
   if (!webhook) {
     return undefined;
@@ -60,6 +66,9 @@ export async function listWebhooksForEvent(
   tenantId: string,
   event: string,
 ): Promise<WebhookRow[]> {
+  const appsTable = tableFor(database, appsDefinition);
+  const usersTable = tableFor(database, usersDefinition);
+  const webhooksTable = tableFor(database, webhooksDefinition);
   return database
     .select()
     .from(webhooksTable)
@@ -67,7 +76,7 @@ export async function listWebhooksForEvent(
       and(
         eq(webhooksTable.tenantId, tenantId),
         eq(webhooksTable.enabled, true),
-        sql`${webhooksTable.events} @> ${JSON.stringify([event])}::jsonb`,
+        jsonListIncludes(database, webhooksTable.events, event),
         // An app stops working with its installer's account; so does telling it things.
         sql`(${webhooksTable.appId} is null or exists (
           select 1 from ${appsTable} inner join ${usersTable}
@@ -82,7 +91,8 @@ export async function insertWebhook(
   database: DatabaseOrTransaction,
   webhook: NewWebhookRow,
 ): Promise<WebhookRow> {
-  const [inserted] = await database.insert(webhooksTable).values(webhook).returning();
+  const webhooksTable = tableFor(database, webhooksDefinition);
+  const [inserted] = await insertReturning(database, webhooksTable, webhook);
   if (!inserted) {
     throw new Error("Saving the webhook returned nothing");
   }
@@ -95,10 +105,11 @@ export async function updateWebhookRow(
   webhookId: string,
   changes: Partial<Pick<WebhookRow, "name" | "url" | "events" | "enabled">>,
 ): Promise<void> {
+  const webhooksTable = tableFor(database, webhooksDefinition);
   await database
     .update(webhooksTable)
     .set(changes)
-    .where(and(addedInSettings(tenantId), eq(webhooksTable.id, webhookId)));
+    .where(and(addedInSettings(webhooksTable, tenantId), eq(webhooksTable.id, webhookId)));
 }
 
 /** True when a webhook was deleted. Its deliveries go with it. */
@@ -107,10 +118,13 @@ export async function deleteWebhookRow(
   tenantId: string,
   webhookId: string,
 ): Promise<boolean> {
-  const deleted = await database
-    .delete(webhooksTable)
-    .where(and(addedInSettings(tenantId), eq(webhooksTable.id, webhookId)))
-    .returning({ id: webhooksTable.id });
+  const webhooksTable = tableFor(database, webhooksDefinition);
+  const deleted = await deleteReturning(
+    database,
+    webhooksTable,
+    and(addedInSettings(webhooksTable, tenantId), eq(webhooksTable.id, webhookId)),
+    { id: webhooksTable.id },
+  );
   return deleted.length > 0;
 }
 
@@ -118,23 +132,23 @@ async function attachLastDeliveries(
   database: DatabaseOrTransaction,
   webhooks: WebhookRow[],
 ): Promise<WebhookWithLastDelivery[]> {
+  const webhookDeliveriesTable = tableFor(database, webhookDeliveriesDefinition);
   if (webhooks.length === 0) {
     return [];
   }
-  const latest = await database
-    .selectDistinctOn([webhookDeliveriesTable.webhookId], {
+  const latest = await selectNewestPerGroup(database, webhookDeliveriesTable, {
+    fields: {
       webhookId: webhookDeliveriesTable.webhookId,
       status: webhookDeliveriesTable.status,
       createdAt: webhookDeliveriesTable.createdAt,
-    })
-    .from(webhookDeliveriesTable)
-    .where(
-      inArray(
-        webhookDeliveriesTable.webhookId,
-        webhooks.map((webhook) => webhook.id),
-      ),
-    )
-    .orderBy(webhookDeliveriesTable.webhookId, desc(webhookDeliveriesTable.createdAt));
+    },
+    groupBy: webhookDeliveriesTable.webhookId,
+    newest: webhookDeliveriesTable.createdAt,
+    where: inArray(
+      webhookDeliveriesTable.webhookId,
+      webhooks.map((webhook) => webhook.id),
+    ),
+  });
   const byWebhook = new Map(latest.map((row) => [row.webhookId, row]));
   return webhooks.map((webhook) => {
     const last = byWebhook.get(webhook.id);

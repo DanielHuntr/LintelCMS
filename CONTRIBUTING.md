@@ -43,6 +43,24 @@ packages/core/src/orders/
 - Use design tokens (`bg-accent-fill`, `text-label`...) rather than fixed colours, so agencies can rebrand. See `packages/admin/src/design/README.md`.
 - Respect reduced motion. Motion explains cause and effect; it is never decoration.
 
+## Database code
+
+Lintel is being made to run on more databases than Postgres, one feature at a time. It can't
+yet; `packages/core/src/database/dialect/README.md` explains the plan. Two things apply to
+everyone meanwhile:
+
+- **After changing a `*.table.ts` file**, run `pnpm db:generate:mysql --name <what_changed>`
+  in `packages/core` as well as `pnpm db:generate`. It writes to `migrations-mysql` and
+  leaves the Postgres migrations alone. `pnpm test:dialects` fails if you forget.
+- **Write queries that aren't Postgres-only.** A test keeps a list of the Postgres-only code
+  left (`src/testing/postgres-only-code-baseline.json`), and fails on anything new, such as
+  `.returning()`, `.onConflictDoUpdate()`, `ilike`, `->>` or `::uuid`. Use the helpers in
+  `database/dialect` instead: its README has a table of what replaces what. If you remove
+  some, run `pnpm dialect:baseline` in `packages/core` so the list shrinks.
+
+`pnpm test:dialects` (MySQL and MariaDB) and `pnpm test:postgres` (a real Postgres server)
+need Docker and run on request. Ordinary `pnpm test` needs neither.
+
 ## Before you open a pull request
 
 ```bash

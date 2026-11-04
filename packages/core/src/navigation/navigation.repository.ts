@@ -1,8 +1,15 @@
-import { and, asc, eq, inArray, isNotNull, sql } from "drizzle-orm";
-import { collectionsTable } from "../collections/collections.table.js";
+import { and, asc, eq, inArray, isNotNull } from "drizzle-orm";
+import { collectionsTable as collectionsDefinition } from "../collections/collections.table.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
-import { entriesTable } from "../entries/entries.table.js";
-import { type Navigation, navigationsTable, type NewNavigation } from "./navigation.table.js";
+import { entriesTable as entriesDefinition } from "../entries/entries.table.js";
+import {
+  type Navigation,
+  navigationsTable as navigationsDefinition,
+  type NewNavigation,
+} from "./navigation.table.js";
+import { insertIfNewReturning } from "../database/dialect/writes.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
+import { jsonText } from "../database/dialect/expressions.js";
 
 /** Database reads and writes for menus, nothing else. */
 
@@ -12,6 +19,7 @@ export async function listNavigationRows(
   tenantId: string,
   siteId: string,
 ): Promise<Navigation[]> {
+  const navigationsTable = tableFor(database, navigationsDefinition);
   return database
     .select()
     .from(navigationsTable)
@@ -25,6 +33,7 @@ export async function findNavigationByHandle(
   siteId: string,
   handle: string,
 ): Promise<Navigation | undefined> {
+  const navigationsTable = tableFor(database, navigationsDefinition);
   const [navigation] = await database
     .select()
     .from(navigationsTable)
@@ -44,13 +53,10 @@ export async function insertNavigationIfMissing(
   database: DatabaseOrTransaction,
   navigation: NewNavigation,
 ): Promise<Navigation | undefined> {
-  const [inserted] = await database
-    .insert(navigationsTable)
-    .values(navigation)
-    .onConflictDoNothing({
-      target: [navigationsTable.tenantId, navigationsTable.siteId, navigationsTable.handle],
-    })
-    .returning();
+  const navigationsTable = tableFor(database, navigationsDefinition);
+  const [inserted] = await insertIfNewReturning(database, navigationsTable, navigation, {
+    target: [navigationsTable.tenantId, navigationsTable.siteId, navigationsTable.handle],
+  });
   return inserted;
 }
 
@@ -59,6 +65,7 @@ export async function updateNavigationRow(
   navigationId: string,
   changes: Partial<Pick<Navigation, "name" | "maxDepth" | "items" | "source" | "pageTree">>,
 ): Promise<void> {
+  const navigationsTable = tableFor(database, navigationsDefinition);
   await database
     .update(navigationsTable)
     .set({ ...changes, updatedAt: new Date() })
@@ -69,6 +76,7 @@ export async function deleteNavigationRow(
   database: DatabaseOrTransaction,
   navigationId: string,
 ): Promise<void> {
+  const navigationsTable = tableFor(database, navigationsDefinition);
   await database.delete(navigationsTable).where(eq(navigationsTable.id, navigationId));
 }
 
@@ -77,13 +85,15 @@ export async function findLinkedEntries(
   database: DatabaseOrTransaction,
   entryIds: readonly string[],
 ) {
+  const collectionsTable = tableFor(database, collectionsDefinition);
+  const entriesTable = tableFor(database, entriesDefinition);
   if (entryIds.length === 0) {
     return [];
   }
   return database
     .select({
       id: entriesTable.id,
-      title: sql<string | null>`${entriesTable.data}->>'title'`,
+      title: jsonText(database, entriesTable.data, "title"),
       collectionHandle: collectionsTable.handle,
       status: entriesTable.status,
     })
@@ -102,6 +112,8 @@ export async function listMenuTreePages(
   siteId: string,
   locale: string,
 ) {
+  const collectionsTable = tableFor(database, collectionsDefinition);
+  const entriesTable = tableFor(database, entriesDefinition);
   return database
     .select({
       id: entriesTable.id,
@@ -124,6 +136,8 @@ export async function listMenuTreePages(
 
 /** A page's site, language and parent: where its menu item goes. */
 export async function findMenuPageRow(database: DatabaseOrTransaction, entryId: string) {
+  const collectionsTable = tableFor(database, collectionsDefinition);
+  const entriesTable = tableFor(database, entriesDefinition);
   const [row] = await database
     .select({
       id: entriesTable.id,

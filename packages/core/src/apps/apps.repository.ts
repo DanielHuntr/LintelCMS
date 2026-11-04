@@ -1,7 +1,9 @@
 import { and, desc, eq } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../database/client.js";
-import { usersTable } from "../users/users.table.js";
-import { type AppRow, appsTable, type NewAppRow } from "./apps.table.js";
+import { usersTable as usersDefinition } from "../users/users.table.js";
+import { type AppRow, appsTable as appsDefinition, type NewAppRow } from "./apps.table.js";
+import { deleteReturning, insertReturning } from "../database/dialect/writes.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /** Database reads and writes for apps, nothing else. */
 
@@ -11,6 +13,8 @@ export async function listAppRows(
   database: DatabaseOrTransaction,
   tenantId: string,
 ): Promise<AppWithInstaller[]> {
+  const appsTable = tableFor(database, appsDefinition);
+  const usersTable = tableFor(database, usersDefinition);
   const rows = await database
     .select({ app: appsTable, installerName: usersTable.name })
     .from(appsTable)
@@ -25,6 +29,8 @@ export async function findAppRow(
   tenantId: string,
   appId: string,
 ): Promise<AppWithInstaller | undefined> {
+  const appsTable = tableFor(database, appsDefinition);
+  const usersTable = tableFor(database, usersDefinition);
   const [row] = await database
     .select({ app: appsTable, installerName: usersTable.name })
     .from(appsTable)
@@ -39,6 +45,7 @@ export async function findAppRowByHandle(
   tenantId: string,
   handle: string,
 ): Promise<AppRow | undefined> {
+  const appsTable = tableFor(database, appsDefinition);
   const [row] = await database
     .select()
     .from(appsTable)
@@ -51,6 +58,7 @@ export async function findAppRowBySecretHash(
   database: DatabaseOrTransaction,
   secretHash: string,
 ): Promise<AppRow | undefined> {
+  const appsTable = tableFor(database, appsDefinition);
   const [row] = await database
     .select()
     .from(appsTable)
@@ -60,7 +68,8 @@ export async function findAppRowBySecretHash(
 }
 
 export async function insertApp(database: DatabaseOrTransaction, app: NewAppRow): Promise<AppRow> {
-  const [inserted] = await database.insert(appsTable).values(app).returning();
+  const appsTable = tableFor(database, appsDefinition);
+  const [inserted] = await insertReturning(database, appsTable, app);
   if (!inserted) {
     throw new Error("Saving the app returned nothing");
   }
@@ -72,6 +81,7 @@ export async function recordAppUse(
   appId: string,
   usedAt: Date,
 ): Promise<void> {
+  const appsTable = tableFor(database, appsDefinition);
   await database.update(appsTable).set({ lastUsedAt: usedAt }).where(eq(appsTable.id, appId));
 }
 
@@ -81,9 +91,12 @@ export async function deleteAppRow(
   tenantId: string,
   appId: string,
 ): Promise<boolean> {
-  const deleted = await database
-    .delete(appsTable)
-    .where(and(eq(appsTable.tenantId, tenantId), eq(appsTable.id, appId)))
-    .returning({ id: appsTable.id });
+  const appsTable = tableFor(database, appsDefinition);
+  const deleted = await deleteReturning(
+    database,
+    appsTable,
+    and(eq(appsTable.tenantId, tenantId), eq(appsTable.id, appId)),
+    { id: appsTable.id },
+  );
   return deleted.length > 0;
 }

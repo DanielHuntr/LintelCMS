@@ -1,11 +1,15 @@
 import { and, asc, eq, inArray, isNotNull, or } from "drizzle-orm";
-import { blocksTable } from "../blocks/blocks.table.js";
-import { collectionsTable } from "../collections/collections.table.js";
+import { blocksTable as blocksDefinition } from "../blocks/blocks.table.js";
+import { collectionsTable as collectionsDefinition } from "../collections/collections.table.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
-import { entriesTable } from "../entries/entries.table.js";
-import { formsTable } from "../forms/forms.table.js";
-import { assetsTable } from "../media/media.table.js";
-import { taxonomiesTable, termsTable } from "../taxonomies/taxonomies.table.js";
+import { entriesTable as entriesDefinition } from "../entries/entries.table.js";
+import { formsTable as formsDefinition } from "../forms/forms.table.js";
+import { assetsTable as assetsDefinition } from "../media/media.table.js";
+import {
+  taxonomiesTable as taxonomiesDefinition,
+  termsTable as termsDefinition,
+} from "../taxonomies/taxonomies.table.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /** Database reads for exporting the website as files, nothing else. */
 
@@ -30,6 +34,8 @@ export async function listPublishedEntryRows(
   tenantId: string,
   sites: { siteId: string; defaultSiteId: string },
 ): Promise<PublishedEntryRow[]> {
+  const collectionsTable = tableFor(database, collectionsDefinition);
+  const entriesTable = tableFor(database, entriesDefinition);
   const rows = await database
     .select({
       id: entriesTable.id,
@@ -74,6 +80,8 @@ export async function findReferencedVersions(
   database: DatabaseOrTransaction,
   ids: readonly string[],
 ): Promise<Map<string, string>> {
+  const assetsTable = tableFor(database, assetsDefinition);
+  const entriesTable = tableFor(database, entriesDefinition);
   if (ids.length === 0) {
     return new Map();
   }
@@ -100,6 +108,8 @@ export async function listTermRows(
   database: DatabaseOrTransaction,
   tenantId: string,
 ): Promise<TermRow[]> {
+  const taxonomiesTable = tableFor(database, taxonomiesDefinition);
+  const termsTable = tableFor(database, termsDefinition);
   return database
     .select({
       taxonomyHandle: taxonomiesTable.handle,
@@ -117,6 +127,7 @@ export async function listFormVersions(
   database: DatabaseOrTransaction,
   tenantId: string,
 ): Promise<Array<{ handle: string; updatedAt: Date }>> {
+  const formsTable = tableFor(database, formsDefinition);
   return database
     .select({ handle: formsTable.handle, updatedAt: formsTable.updatedAt })
     .from(formsTable)
@@ -129,6 +140,7 @@ export async function listBlockVersions(
   database: DatabaseOrTransaction,
   tenantId: string,
 ): Promise<Array<{ handle: string; updatedAt: Date }>> {
+  const blocksTable = tableFor(database, blocksDefinition);
   return database
     .select({ handle: blocksTable.handle, updatedAt: blocksTable.updatedAt })
     .from(blocksTable)

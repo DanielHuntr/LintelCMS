@@ -1,6 +1,8 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../database/client.js";
-import { entriesTable } from "../entries/entries.table.js";
+import { jsonText } from "../database/dialect/expressions.js";
+import { entriesTable as entriesDefinition } from "../entries/entries.table.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /** Database reads for templates, nothing else. */
 
@@ -11,12 +13,13 @@ export async function listCollectionPages(
   siteId: string,
   locale: string,
 ) {
+  const entriesTable = tableFor(database, entriesDefinition);
   return database
     .select({
       id: entriesTable.id,
       slug: entriesTable.slug,
       parentId: entriesTable.parentId,
-      title: sql<string | null>`${entriesTable.data}->>'title'`,
+      title: jsonText(database, entriesTable.data, "title"),
     })
     .from(entriesTable)
     .where(

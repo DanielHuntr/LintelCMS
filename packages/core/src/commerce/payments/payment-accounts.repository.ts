@@ -3,11 +3,13 @@ import type { DatabaseOrTransaction } from "../../database/client.js";
 import { DEFAULT_TENANT_ID } from "../../database/columns.js";
 import {
   type ConnectableProvider,
-  paymentAccountsTable,
-  paymentEventsTable,
+  paymentAccountsTable as paymentAccountsDefinition,
+  paymentEventsTable as paymentEventsDefinition,
   type SavedMollieCredentials,
   type SavedPayPalCredentials,
 } from "./payment-accounts.table.js";
+import { insertIfNewReturning, upsert } from "../../database/dialect/writes.js";
+import { tableFor } from "../../database/dialect/mysql-tables.js";
 
 /** Database reads and writes for the saved PayPal and Mollie keys, and PayPal's events. */
 
@@ -15,6 +17,7 @@ export async function findSavedCredentials(
   database: DatabaseOrTransaction,
   provider: ConnectableProvider,
 ): Promise<SavedPayPalCredentials | SavedMollieCredentials | null> {
+  const paymentAccountsTable = tableFor(database, paymentAccountsDefinition);
   const [row] = await database
     .select()
     .from(paymentAccountsTable)
@@ -33,19 +36,23 @@ export async function saveCredentials(
   provider: ConnectableProvider,
   credentials: SavedPayPalCredentials | SavedMollieCredentials,
 ): Promise<void> {
-  await database
-    .insert(paymentAccountsTable)
-    .values({ tenantId: DEFAULT_TENANT_ID, provider, credentials })
-    .onConflictDoUpdate({
+  const paymentAccountsTable = tableFor(database, paymentAccountsDefinition);
+  await upsert(
+    database,
+    paymentAccountsTable,
+    { tenantId: DEFAULT_TENANT_ID, provider, credentials },
+    {
       target: [paymentAccountsTable.tenantId, paymentAccountsTable.provider],
       set: { credentials, updatedAt: new Date() },
-    });
+    },
+  );
 }
 
 export async function deleteCredentials(
   database: DatabaseOrTransaction,
   provider: ConnectableProvider,
 ): Promise<void> {
+  const paymentAccountsTable = tableFor(database, paymentAccountsDefinition);
   await database
     .delete(paymentAccountsTable)
     .where(
@@ -61,10 +68,13 @@ export async function recordPaymentEventIfNew(
   database: DatabaseOrTransaction,
   event: { provider: ConnectableProvider; eventId: string; type: string },
 ): Promise<boolean> {
-  const inserted = await database
-    .insert(paymentEventsTable)
-    .values({ ...event, tenantId: DEFAULT_TENANT_ID })
-    .onConflictDoNothing()
-    .returning({ eventId: paymentEventsTable.eventId });
+  const paymentEventsTable = tableFor(database, paymentEventsDefinition);
+  const inserted = await insertIfNewReturning(
+    database,
+    paymentEventsTable,
+    { ...event, tenantId: DEFAULT_TENANT_ID },
+    {},
+    { eventId: paymentEventsTable.eventId },
+  );
   return inserted.length > 0;
 }

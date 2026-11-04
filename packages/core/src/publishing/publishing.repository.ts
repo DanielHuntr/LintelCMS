@@ -1,13 +1,20 @@
 import { and, desc, eq } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import {
-  bridgeReceiptsTable,
+  bridgeReceiptsTable as bridgeReceiptsDefinition,
   type NewPublishTargetRow,
   type PublishRunRow,
-  publishRunsTable,
+  publishRunsTable as publishRunsDefinition,
   type PublishTargetRow,
-  publishTargetsTable,
+  publishTargetsTable as publishTargetsDefinition,
 } from "./publishing.table.js";
+import {
+  deleteReturning,
+  insertIfNewReturning,
+  insertReturning,
+  updateReturning,
+} from "../database/dialect/writes.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /** Database reads and writes for publishing targets, their runs and receipts. */
 
@@ -15,6 +22,7 @@ export function listTargetRows(
   database: DatabaseOrTransaction,
   tenantId: string,
 ): Promise<PublishTargetRow[]> {
+  const publishTargetsTable = tableFor(database, publishTargetsDefinition);
   return database
     .select()
     .from(publishTargetsTable)
@@ -27,6 +35,7 @@ export async function findTargetRow(
   tenantId: string,
   targetId: string,
 ): Promise<PublishTargetRow | undefined> {
+  const publishTargetsTable = tableFor(database, publishTargetsDefinition);
   const [row] = await database
     .select()
     .from(publishTargetsTable)
@@ -39,7 +48,8 @@ export async function insertTargetRow(
   database: DatabaseOrTransaction,
   row: NewPublishTargetRow,
 ): Promise<PublishTargetRow> {
-  const [inserted] = await database.insert(publishTargetsTable).values(row).returning();
+  const publishTargetsTable = tableFor(database, publishTargetsDefinition);
+  const [inserted] = await insertReturning(database, publishTargetsTable, row);
   if (!inserted) throw new Error("Saving the publishing destination returned nothing.");
   return inserted;
 }
@@ -49,11 +59,13 @@ export async function updateTargetRow(
   targetId: string,
   changes: Partial<NewPublishTargetRow>,
 ): Promise<PublishTargetRow | undefined> {
-  const [updated] = await database
-    .update(publishTargetsTable)
-    .set(changes)
-    .where(eq(publishTargetsTable.id, targetId))
-    .returning();
+  const publishTargetsTable = tableFor(database, publishTargetsDefinition);
+  const [updated] = await updateReturning(
+    database,
+    publishTargetsTable,
+    changes,
+    eq(publishTargetsTable.id, targetId),
+  );
   return updated;
 }
 
@@ -62,18 +74,22 @@ export async function deleteTargetRow(
   tenantId: string,
   targetId: string,
 ): Promise<boolean> {
-  const deleted = await database
-    .delete(publishTargetsTable)
-    .where(and(eq(publishTargetsTable.tenantId, tenantId), eq(publishTargetsTable.id, targetId)))
-    .returning({ id: publishTargetsTable.id });
+  const publishTargetsTable = tableFor(database, publishTargetsDefinition);
+  const deleted = await deleteReturning(
+    database,
+    publishTargetsTable,
+    and(eq(publishTargetsTable.tenantId, tenantId), eq(publishTargetsTable.id, targetId)),
+    { id: publishTargetsTable.id },
+  );
   return deleted.length > 0;
 }
 
 export async function insertRunRow(
   database: DatabaseOrTransaction,
-  row: typeof publishRunsTable.$inferInsert,
+  row: typeof publishRunsDefinition.$inferInsert,
 ): Promise<PublishRunRow> {
-  const [inserted] = await database.insert(publishRunsTable).values(row).returning();
+  const publishRunsTable = tableFor(database, publishRunsDefinition);
+  const [inserted] = await insertReturning(database, publishRunsTable, row);
   if (!inserted) throw new Error("Recording the publish returned nothing.");
   return inserted;
 }
@@ -81,8 +97,9 @@ export async function insertRunRow(
 export async function updateRunRow(
   database: DatabaseOrTransaction,
   runId: string,
-  changes: Partial<typeof publishRunsTable.$inferInsert>,
+  changes: Partial<typeof publishRunsDefinition.$inferInsert>,
 ): Promise<void> {
+  const publishRunsTable = tableFor(database, publishRunsDefinition);
   await database.update(publishRunsTable).set(changes).where(eq(publishRunsTable.id, runId));
 }
 
@@ -92,6 +109,7 @@ export function listRunRows(
   targetId: string,
   limit: number,
 ): Promise<PublishRunRow[]> {
+  const publishRunsTable = tableFor(database, publishRunsDefinition);
   return database
     .select()
     .from(publishRunsTable)
@@ -105,6 +123,7 @@ export async function findRunRow(
   tenantId: string,
   runId: string,
 ): Promise<PublishRunRow | undefined> {
+  const publishRunsTable = tableFor(database, publishRunsDefinition);
   const [row] = await database
     .select()
     .from(publishRunsTable)
@@ -119,12 +138,15 @@ export async function findRunRow(
  */
 export async function recordReceipt(
   database: DatabaseOrTransaction,
-  row: typeof bridgeReceiptsTable.$inferInsert,
+  row: typeof bridgeReceiptsDefinition.$inferInsert,
 ): Promise<boolean> {
-  const inserted = await database
-    .insert(bridgeReceiptsTable)
-    .values(row)
-    .onConflictDoNothing()
-    .returning({ id: bridgeReceiptsTable.id });
+  const bridgeReceiptsTable = tableFor(database, bridgeReceiptsDefinition);
+  const inserted = await insertIfNewReturning(
+    database,
+    bridgeReceiptsTable,
+    row,
+    {},
+    { id: bridgeReceiptsTable.id },
+  );
   return inserted.length > 0;
 }

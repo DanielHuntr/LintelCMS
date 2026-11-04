@@ -1,9 +1,12 @@
-import { and, count, desc, eq, ilike, inArray, isNull, min, or, sql } from "drizzle-orm";
+import { and, count, desc, eq, inArray, isNull, min, or, sql } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../../database/client.js";
 import { DEFAULT_TENANT_ID } from "../../database/columns.js";
-import { ordersTable } from "../orders/orders.table.js";
-import { archivedOrdersTable } from "../shopify-import/shopify-import.table.js";
-import { type CustomerRow, customersTable } from "./customers.table.js";
+import { ordersTable as ordersDefinition } from "../orders/orders.table.js";
+import { archivedOrdersTable as archivedOrdersDefinition } from "../shopify-import/shopify-import.table.js";
+import { type CustomerRow, customersTable as customersDefinition } from "./customers.table.js";
+import { insertIfNew } from "../../database/dialect/writes.js";
+import { tableFor } from "../../database/dialect/mysql-tables.js";
+import { countWhere, likeIgnoringCase, sumWhere } from "../../database/dialect/expressions.js";
 
 /** Database reads and writes for customers. */
 
@@ -26,10 +29,8 @@ export async function findOrCreateCustomerRow(
   email: string,
   name: string,
 ): Promise<CustomerRow> {
-  await database
-    .insert(customersTable)
-    .values({ tenantId: DEFAULT_TENANT_ID, email, name })
-    .onConflictDoNothing();
+  const customersTable = tableFor(database, customersDefinition);
+  await insertIfNew(database, customersTable, { tenantId: DEFAULT_TENANT_ID, email, name });
   const [row] = await database
     .select()
     .from(customersTable)
@@ -43,6 +44,7 @@ export async function findCustomerRow(
   database: DatabaseOrTransaction,
   customerId: string,
 ): Promise<CustomerRow | undefined> {
+  const customersTable = tableFor(database, customersDefinition);
   const [row] = await database
     .select()
     .from(customersTable)
@@ -56,6 +58,7 @@ export async function updateCustomerRow(
   customerId: string,
   changes: Partial<Pick<CustomerRow, "name" | "phone" | "note" | "addresses">>,
 ): Promise<void> {
+  const customersTable = tableFor(database, customersDefinition);
   await database.update(customersTable).set(changes).where(eq(customersTable.id, customerId));
 }
 
@@ -64,11 +67,15 @@ export async function listCustomerRows(
   search: string | undefined,
   page: { page: number; perPage: number },
 ): Promise<{ rows: CustomerRow[]; total: number }> {
+  const customersTable = tableFor(database, customersDefinition);
   const escaped = search?.replace(/[\\%_]/g, (character) => `\\${character}`);
   const where = and(
     eq(customersTable.tenantId, DEFAULT_TENANT_ID),
     escaped
-      ? or(ilike(customersTable.email, `%${escaped}%`), ilike(customersTable.name, `%${escaped}%`))
+      ? or(
+          likeIgnoringCase(database, customersTable.email, `%${escaped}%`),
+          likeIgnoringCase(database, customersTable.name, `%${escaped}%`),
+        )
       : undefined,
   );
   const rows = await database
@@ -91,6 +98,8 @@ export async function sumCustomerOrders(
   database: DatabaseOrTransaction,
   customerIds: readonly string[],
 ): Promise<Map<string, CustomerTotals>> {
+  const archivedOrdersTable = tableFor(database, archivedOrdersDefinition);
+  const ordersTable = tableFor(database, ordersDefinition);
   const totals = new Map<string, CustomerTotals>();
   if (customerIds.length === 0) return totals;
   const ids = [...customerIds];
@@ -116,8 +125,12 @@ export async function sumCustomerOrders(
     .select({
       customerId: archivedOrdersTable.customerId,
       currency: archivedOrdersTable.currency,
-      orderCount: sql<number>`cast(count(*) filter (where ${notCancelled}) as integer)`,
-      amount: sql<number>`coalesce(sum(${archivedOrdersTable.totalAmount} - ${archivedOrdersTable.refundedAmount}) filter (where ${notCancelled}), 0)`,
+      orderCount: countWhere(database, notCancelled),
+      amount: sumWhere(
+        database,
+        sql`${archivedOrdersTable.totalAmount} - ${archivedOrdersTable.refundedAmount}`,
+        notCancelled,
+      ),
       firstAt: min(archivedOrdersTable.placedAt),
     })
     .from(archivedOrdersTable)

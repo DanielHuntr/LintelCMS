@@ -1,6 +1,12 @@
 import { and, asc, eq } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../database/client.js";
-import { type NewPasskeyRow, type PasskeyRow, passkeysTable } from "./passkeys.table.js";
+import {
+  type NewPasskeyRow,
+  type PasskeyRow,
+  passkeysTable as passkeysDefinition,
+} from "./passkeys.table.js";
+import { deleteReturning, insertReturning } from "../database/dialect/writes.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /** Database reads and writes for passkeys, nothing else. */
 
@@ -8,7 +14,8 @@ export async function insertPasskey(
   database: DatabaseOrTransaction,
   passkey: NewPasskeyRow,
 ): Promise<PasskeyRow> {
-  const [inserted] = await database.insert(passkeysTable).values(passkey).returning();
+  const passkeysTable = tableFor(database, passkeysDefinition);
+  const [inserted] = await insertReturning(database, passkeysTable, passkey);
   if (!inserted) {
     throw new Error("The database did not return the new passkey.");
   }
@@ -19,6 +26,7 @@ export function listPasskeyRows(
   database: DatabaseOrTransaction,
   userId: string,
 ): Promise<PasskeyRow[]> {
+  const passkeysTable = tableFor(database, passkeysDefinition);
   return database
     .select()
     .from(passkeysTable)
@@ -30,6 +38,7 @@ export async function findPasskeyByCredentialId(
   database: DatabaseOrTransaction,
   credentialId: string,
 ): Promise<PasskeyRow | undefined> {
+  const passkeysTable = tableFor(database, passkeysDefinition);
   const [passkey] = await database
     .select()
     .from(passkeysTable)
@@ -44,6 +53,7 @@ export async function recordPasskeyUse(
   counter: number,
   usedAt: Date,
 ): Promise<void> {
+  const passkeysTable = tableFor(database, passkeysDefinition);
   await database
     .update(passkeysTable)
     .set({ counter, lastUsedAt: usedAt })
@@ -56,9 +66,11 @@ export async function deletePasskeyRow(
   userId: string,
   passkeyId: string,
 ): Promise<PasskeyRow | undefined> {
-  const [deleted] = await database
-    .delete(passkeysTable)
-    .where(and(eq(passkeysTable.id, passkeyId), eq(passkeysTable.userId, userId)))
-    .returning();
+  const passkeysTable = tableFor(database, passkeysDefinition);
+  const [deleted] = await deleteReturning(
+    database,
+    passkeysTable,
+    and(eq(passkeysTable.id, passkeyId), eq(passkeysTable.userId, userId)),
+  );
   return deleted;
 }

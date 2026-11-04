@@ -1,12 +1,14 @@
 import { and, desc, eq } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../database/client.js";
-import { usersTable } from "../users/users.table.js";
+import { usersTable as usersDefinition } from "../users/users.table.js";
 import {
   type EntryData,
   type Revision,
   type RevisionKind,
-  revisionsTable,
+  revisionsTable as revisionsDefinition,
 } from "./entries.table.js";
+import { insertReturning } from "../database/dialect/writes.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /** Database reads and writes for revisions, nothing else. */
 
@@ -21,16 +23,20 @@ export interface RevisionRow {
   authorName: string | null;
 }
 
-const revisionColumns = {
-  id: revisionsTable.id,
-  kind: revisionsTable.kind,
-  isOpen: revisionsTable.isOpen,
-  restoredFromAt: revisionsTable.restoredFromAt,
-  createdAt: revisionsTable.createdAt,
-  updatedAt: revisionsTable.updatedAt,
-  authorId: usersTable.id,
-  authorName: usersTable.name,
-};
+function revisionColumns(database: DatabaseOrTransaction) {
+  const revisionsTable = tableFor(database, revisionsDefinition);
+  const usersTable = tableFor(database, usersDefinition);
+  return {
+    id: revisionsTable.id,
+    kind: revisionsTable.kind,
+    isOpen: revisionsTable.isOpen,
+    restoredFromAt: revisionsTable.restoredFromAt,
+    createdAt: revisionsTable.createdAt,
+    updatedAt: revisionsTable.updatedAt,
+    authorId: usersTable.id,
+    authorName: usersTable.name,
+  };
+}
 
 export interface NewRevision {
   entryId: string;
@@ -46,11 +52,9 @@ export async function insertRevision(
   database: DatabaseOrTransaction,
   { at, ...revision }: NewRevision,
 ): Promise<Revision> {
+  const revisionsTable = tableFor(database, revisionsDefinition);
   const times = at ? { createdAt: at, updatedAt: at } : {};
-  const [inserted] = await database
-    .insert(revisionsTable)
-    .values({ ...revision, ...times })
-    .returning();
+  const [inserted] = await insertReturning(database, revisionsTable, { ...revision, ...times });
   if (!inserted) {
     throw new Error("The database did not return the new revision.");
   }
@@ -62,6 +66,7 @@ export async function findLatestRevision(
   database: DatabaseOrTransaction,
   entryId: string,
 ): Promise<Revision | undefined> {
+  const revisionsTable = tableFor(database, revisionsDefinition);
   const [latest] = await database
     .select()
     .from(revisionsTable)
@@ -77,6 +82,7 @@ export async function findLatestRevisionOfKind(
   entryId: string,
   kind: Revision["kind"],
 ): Promise<Revision | undefined> {
+  const revisionsTable = tableFor(database, revisionsDefinition);
   const [latest] = await database
     .select()
     .from(revisionsTable)
@@ -91,6 +97,7 @@ export async function updateOpenRevision(
   revisionId: string,
   changes: { data: EntryData; isOpen: boolean; updatedAt: Date },
 ): Promise<void> {
+  const revisionsTable = tableFor(database, revisionsDefinition);
   await database.update(revisionsTable).set(changes).where(eq(revisionsTable.id, revisionId));
 }
 
@@ -99,6 +106,7 @@ export async function closeOpenRevisions(
   database: DatabaseOrTransaction,
   entryId: string,
 ): Promise<void> {
+  const revisionsTable = tableFor(database, revisionsDefinition);
   await database
     .update(revisionsTable)
     .set({ isOpen: false })
@@ -109,8 +117,10 @@ export async function listRevisionsForEntry(
   database: DatabaseOrTransaction,
   entryId: string,
 ): Promise<RevisionRow[]> {
+  const revisionsTable = tableFor(database, revisionsDefinition);
+  const usersTable = tableFor(database, usersDefinition);
   return database
-    .select(revisionColumns)
+    .select(revisionColumns(database))
     .from(revisionsTable)
     .leftJoin(usersTable, eq(usersTable.id, revisionsTable.authorId))
     .where(eq(revisionsTable.entryId, entryId))
@@ -122,8 +132,10 @@ export async function findRevisionForEntry(
   entryId: string,
   revisionId: string,
 ): Promise<(RevisionRow & { data: EntryData }) | undefined> {
+  const revisionsTable = tableFor(database, revisionsDefinition);
+  const usersTable = tableFor(database, usersDefinition);
   const [revision] = await database
-    .select({ ...revisionColumns, data: revisionsTable.data })
+    .select({ ...revisionColumns(database), data: revisionsTable.data })
     .from(revisionsTable)
     .leftJoin(usersTable, eq(usersTable.id, revisionsTable.authorId))
     .where(and(eq(revisionsTable.entryId, entryId), eq(revisionsTable.id, revisionId)))

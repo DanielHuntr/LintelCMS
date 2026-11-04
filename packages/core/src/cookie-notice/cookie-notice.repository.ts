@@ -1,8 +1,10 @@
-import { and, eq, isNotNull, sql } from "drizzle-orm";
+import { and, eq, isNotNull } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../database/client.js";
+import { jsonValue } from "../database/dialect/expressions.js";
 import { DEFAULT_TENANT_ID } from "../database/columns.js";
-import { entriesTable } from "../entries/entries.table.js";
+import { entriesTable as entriesDefinition } from "../entries/entries.table.js";
 import { findSettingValue, upsertSettingValue } from "../settings/settings.repository.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /** Database reads and writes for the cookie notice: its settings row, and published designs. */
 
@@ -27,7 +29,8 @@ export async function listPublishedDesigns(
   database: DatabaseOrTransaction,
   where: { collectionId: string; siteId: string },
 ): Promise<unknown[]> {
-  const design = sql<unknown>`${entriesTable.publishedData} -> 'design'`;
+  const entriesTable = tableFor(database, entriesDefinition);
+  const design = jsonValue(database, entriesTable.publishedData, "design");
   const rows = await database
     .select({ design })
     .from(entriesTable)
@@ -37,7 +40,7 @@ export async function listPublishedDesigns(
         eq(entriesTable.collectionId, where.collectionId),
         eq(entriesTable.siteId, where.siteId),
         isNotNull(entriesTable.publishedData),
-        sql`${entriesTable.publishedData} -> 'design' is not null`,
+        isNotNull(design),
       ),
     );
   return rows.map((row) => row.design);

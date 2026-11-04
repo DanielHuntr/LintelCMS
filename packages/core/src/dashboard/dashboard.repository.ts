@@ -1,8 +1,13 @@
 import { and, asc, eq } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../database/client.js";
-import { rolesTable, userRolesTable } from "../roles/roles.table.js";
+import {
+  rolesTable as rolesDefinition,
+  userRolesTable as userRolesDefinition,
+} from "../roles/roles.table.js";
 import type { WidgetPlacement } from "./dashboard.schema.js";
-import { dashboardLayoutsTable } from "./dashboard.table.js";
+import { dashboardLayoutsTable as dashboardLayoutsDefinition } from "./dashboard.table.js";
+import { upsert } from "../database/dialect/writes.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /** Database reads and writes for dashboard layouts, nothing else. */
 
@@ -11,6 +16,7 @@ export async function findUserLayout(
   tenantId: string,
   userId: string,
 ): Promise<WidgetPlacement[] | undefined> {
+  const dashboardLayoutsTable = tableFor(database, dashboardLayoutsDefinition);
   const [row] = await database
     .select({ widgets: dashboardLayoutsTable.widgets })
     .from(dashboardLayoutsTable)
@@ -30,6 +36,9 @@ export async function findRoleLayoutsForUser(
   tenantId: string,
   userId: string,
 ): Promise<WidgetPlacement[][]> {
+  const dashboardLayoutsTable = tableFor(database, dashboardLayoutsDefinition);
+  const rolesTable = tableFor(database, rolesDefinition);
+  const userRolesTable = tableFor(database, userRolesDefinition);
   const rows = await database
     .select({ widgets: dashboardLayoutsTable.widgets })
     .from(userRolesTable)
@@ -52,13 +61,18 @@ export async function upsertUserLayout(
   userId: string,
   widgets: WidgetPlacement[],
 ): Promise<void> {
-  await database
-    .insert(dashboardLayoutsTable)
-    .values({ tenantId, userId, widgets })
-    .onConflictDoUpdate({
+  const dashboardLayoutsTable = tableFor(database, dashboardLayoutsDefinition);
+  await upsert(
+    database,
+    dashboardLayoutsTable,
+    { tenantId, userId, widgets },
+    {
       target: [dashboardLayoutsTable.tenantId, dashboardLayoutsTable.userId],
       set: { widgets, updatedAt: new Date() },
-    });
+      // The role column is null here, and nulls never clash.
+      otherKeysCannotClash: true,
+    },
+  );
 }
 
 export async function deleteUserLayout(
@@ -66,6 +80,7 @@ export async function deleteUserLayout(
   tenantId: string,
   userId: string,
 ): Promise<void> {
+  const dashboardLayoutsTable = tableFor(database, dashboardLayoutsDefinition);
   await database
     .delete(dashboardLayoutsTable)
     .where(
@@ -78,6 +93,8 @@ export async function listRolesWithLayouts(
   database: DatabaseOrTransaction,
   tenantId: string,
 ): Promise<Array<{ id: string; name: string; widgets: WidgetPlacement[] | null }>> {
+  const dashboardLayoutsTable = tableFor(database, dashboardLayoutsDefinition);
+  const rolesTable = tableFor(database, rolesDefinition);
   return database
     .select({ id: rolesTable.id, name: rolesTable.name, widgets: dashboardLayoutsTable.widgets })
     .from(rolesTable)
@@ -97,6 +114,7 @@ export async function roleExists(
   tenantId: string,
   roleId: string,
 ): Promise<boolean> {
+  const rolesTable = tableFor(database, rolesDefinition);
   const [row] = await database
     .select({ id: rolesTable.id })
     .from(rolesTable)
@@ -111,13 +129,18 @@ export async function upsertRoleLayout(
   roleId: string,
   widgets: WidgetPlacement[],
 ): Promise<void> {
-  await database
-    .insert(dashboardLayoutsTable)
-    .values({ tenantId, roleId, widgets })
-    .onConflictDoUpdate({
+  const dashboardLayoutsTable = tableFor(database, dashboardLayoutsDefinition);
+  await upsert(
+    database,
+    dashboardLayoutsTable,
+    { tenantId, roleId, widgets },
+    {
       target: [dashboardLayoutsTable.tenantId, dashboardLayoutsTable.roleId],
       set: { widgets, updatedAt: new Date() },
-    });
+      // The user column is null here, and nulls never clash.
+      otherKeysCannotClash: true,
+    },
+  );
 }
 
 export async function deleteRoleLayout(
@@ -125,6 +148,7 @@ export async function deleteRoleLayout(
   tenantId: string,
   roleId: string,
 ): Promise<void> {
+  const dashboardLayoutsTable = tableFor(database, dashboardLayoutsDefinition);
   await database
     .delete(dashboardLayoutsTable)
     .where(

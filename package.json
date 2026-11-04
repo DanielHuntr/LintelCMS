@@ -11,7 +11,7 @@
   "scripts": {
     "dev": "turbo run dev --filter=!starter-nextjs --filter=!@lintel/docs",
     "docs:dev": "pnpm --filter @lintel/docs dev",
-    "lintel": "pnpm --silent --filter @lintel/cli lintel",
+    "lintel": "pnpm --silent --filter @lintel/core lintel",
     "create-admin": "pnpm --silent --filter @lintel/cli lintel create-admin",
     "reset-password": "pnpm --silent --filter @lintel/core reset-password",
     "db:migrate": "pnpm --silent --filter @lintel/core db:migrate",
@@ -48,6 +48,7 @@
     "globals": "^17.13.0",
     "husky": "^9.1.7",
     "lint-staged": "^17.6.0",
+    "mysql2": "^3.24.6",
     "prettier": "^3.9.10",
     "turbo": "^2.11.10",
     "typescript": "^6.0.3",

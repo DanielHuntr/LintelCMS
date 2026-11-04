@@ -1,6 +1,12 @@
 import { and, asc, eq } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../database/client.js";
-import { type GlobalSet, globalSetsTable, type NewGlobalSet } from "./globals.table.js";
+import {
+  type GlobalSet,
+  globalSetsTable as globalSetsDefinition,
+  type NewGlobalSet,
+} from "./globals.table.js";
+import { insertIfNewReturning } from "../database/dialect/writes.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /** Database reads and writes for global sets, nothing else. Values are in global-values. */
 
@@ -8,6 +14,7 @@ export async function listGlobalSetRows(
   database: DatabaseOrTransaction,
   tenantId: string,
 ): Promise<GlobalSet[]> {
+  const globalSetsTable = tableFor(database, globalSetsDefinition);
   return database
     .select()
     .from(globalSetsTable)
@@ -20,6 +27,7 @@ export async function findGlobalSetByHandle(
   tenantId: string,
   handle: string,
 ): Promise<GlobalSet | undefined> {
+  const globalSetsTable = tableFor(database, globalSetsDefinition);
   const [globalSet] = await database
     .select()
     .from(globalSetsTable)
@@ -33,11 +41,10 @@ export async function insertGlobalSetIfMissing(
   database: DatabaseOrTransaction,
   globalSet: NewGlobalSet,
 ): Promise<GlobalSet | undefined> {
-  const [inserted] = await database
-    .insert(globalSetsTable)
-    .values(globalSet)
-    .onConflictDoNothing({ target: [globalSetsTable.tenantId, globalSetsTable.handle] })
-    .returning();
+  const globalSetsTable = tableFor(database, globalSetsDefinition);
+  const [inserted] = await insertIfNewReturning(database, globalSetsTable, globalSet, {
+    target: [globalSetsTable.tenantId, globalSetsTable.handle],
+  });
   return inserted;
 }
 
@@ -46,6 +53,7 @@ export async function updateGlobalSetRow(
   globalSetId: string,
   changes: Pick<GlobalSet, "name" | "fields">,
 ): Promise<void> {
+  const globalSetsTable = tableFor(database, globalSetsDefinition);
   await database
     .update(globalSetsTable)
     .set({ ...changes, updatedAt: new Date() })
@@ -57,5 +65,6 @@ export async function deleteGlobalSetRow(
   database: DatabaseOrTransaction,
   globalSetId: string,
 ): Promise<void> {
+  const globalSetsTable = tableFor(database, globalSetsDefinition);
   await database.delete(globalSetsTable).where(eq(globalSetsTable.id, globalSetId));
 }

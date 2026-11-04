@@ -1,6 +1,8 @@
 import { and, asc, eq, lte, sql } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../database/client.js";
-import { type Entry, entriesTable, type EntryData } from "./entries.table.js";
+import { type Entry, entriesTable as entriesDefinition, type EntryData } from "./entries.table.js";
+import { updateReturning } from "../database/dialect/writes.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /** Database reads and writes for scheduled publishing, nothing else. */
 
@@ -9,6 +11,7 @@ export async function findDueScheduledEntryIds(
   database: DatabaseOrTransaction,
   now: Date,
 ): Promise<string[]> {
+  const entriesTable = tableFor(database, entriesDefinition);
   const rows = await database
     .select({ id: entriesTable.id })
     .from(entriesTable)
@@ -28,22 +31,22 @@ export async function publishIfStillDue(
   now: Date,
   scheduledData: EntryData | undefined,
 ): Promise<Entry | undefined> {
-  const [published] = await database
-    .update(entriesTable)
-    .set({
+  const entriesTable = tableFor(database, entriesDefinition);
+  const [published] = await updateReturning(
+    database,
+    entriesTable,
+    {
       status: "published",
       // An entry scheduled without a revision (by an import, say) goes live as saved.
       publishedData: scheduledData ?? sql`${entriesTable.data}`,
       publishedAt: sql`${entriesTable.scheduledFor}`,
       scheduledFor: null,
-    })
-    .where(
-      and(
-        eq(entriesTable.id, entryId),
-        eq(entriesTable.status, "scheduled"),
-        lte(entriesTable.scheduledFor, now),
-      ),
-    )
-    .returning();
+    },
+    and(
+      eq(entriesTable.id, entryId),
+      eq(entriesTable.status, "scheduled"),
+      lte(entriesTable.scheduledFor, now),
+    ),
+  );
   return published;
 }

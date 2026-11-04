@@ -1,16 +1,18 @@
 import { and, count, eq, inArray, max, notInArray, or } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../../database/client.js";
 import { DEFAULT_TENANT_ID } from "../../database/columns.js";
-import { checkoutsTable } from "../checkouts/checkouts.table.js";
-import { customersTable } from "../customers/customers.table.js";
-import { discountRedemptionsTable } from "../discounts/discounts.table.js";
-import { type OrderRow, ordersTable } from "../orders/orders.table.js";
-import { shopSettingsTable } from "../settings/shop-settings.table.js";
-import { archivedOrdersTable } from "../shopify-import/shopify-import.table.js";
+import { checkoutsTable as checkoutsDefinition } from "../checkouts/checkouts.table.js";
+import { customersTable as customersDefinition } from "../customers/customers.table.js";
+import { discountRedemptionsTable as discountRedemptionsDefinition } from "../discounts/discounts.table.js";
+import { type OrderRow, ordersTable as ordersDefinition } from "../orders/orders.table.js";
+import { shopSettingsTable as shopSettingsDefinition } from "../settings/shop-settings.table.js";
+import { archivedOrdersTable as archivedOrdersDefinition } from "../shopify-import/shopify-import.table.js";
+import { tableFor } from "../../database/dialect/mysql-tables.js";
 
 /** Database reads and writes for clearing test orders away. */
 
 export async function countTestOrderRows(database: DatabaseOrTransaction): Promise<number> {
+  const ordersTable = tableFor(database, ordersDefinition);
   const [total] = await database
     .select({ value: count() })
     .from(ordersTable)
@@ -19,6 +21,7 @@ export async function countTestOrderRows(database: DatabaseOrTransaction): Promi
 }
 
 export async function lockTestOrderRows(database: DatabaseOrTransaction): Promise<OrderRow[]> {
+  const ordersTable = tableFor(database, ordersDefinition);
   return database
     .select()
     .from(ordersTable)
@@ -31,6 +34,7 @@ export async function deleteTestOrderRows(
   database: DatabaseOrTransaction,
   orderIds: readonly string[],
 ): Promise<void> {
+  const ordersTable = tableFor(database, ordersDefinition);
   if (orderIds.length === 0) return;
   await database
     .delete(ordersTable)
@@ -38,6 +42,7 @@ export async function deleteTestOrderRows(
 }
 
 export async function listOpenTestCheckoutIds(database: DatabaseOrTransaction): Promise<string[]> {
+  const checkoutsTable = tableFor(database, checkoutsDefinition);
   const rows = await database
     .select({ id: checkoutsTable.id })
     .from(checkoutsTable)
@@ -54,6 +59,7 @@ export async function deleteTestCheckoutRows(
   database: DatabaseOrTransaction,
   orderCheckoutIds: readonly string[],
 ): Promise<void> {
+  const checkoutsTable = tableFor(database, checkoutsDefinition);
   await database
     .delete(checkoutsTable)
     .where(
@@ -69,6 +75,7 @@ export async function releaseOrderRedemptions(
   database: DatabaseOrTransaction,
   orderIds: readonly string[],
 ): Promise<void> {
+  const discountRedemptionsTable = tableFor(database, discountRedemptionsDefinition);
   if (orderIds.length === 0) return;
   await database
     .update(discountRedemptionsTable)
@@ -86,6 +93,9 @@ export async function deleteCustomersLeftEmpty(
   database: DatabaseOrTransaction,
   orders: ReadonlyArray<Pick<OrderRow, "customerId" | "createdAt">>,
 ): Promise<void> {
+  const archivedOrdersTable = tableFor(database, archivedOrdersDefinition);
+  const customersTable = tableFor(database, customersDefinition);
+  const ordersTable = tableFor(database, ordersDefinition);
   const firstOrders = new Map<string, number>();
   for (const { customerId, createdAt } of orders) {
     if (!customerId) continue;
@@ -125,6 +135,7 @@ export async function deleteCustomersLeftEmpty(
 export async function findHighestOrderNumber(
   database: DatabaseOrTransaction,
 ): Promise<number | undefined> {
+  const ordersTable = tableFor(database, ordersDefinition);
   const [row] = await database
     .select({ value: max(ordersTable.number) })
     .from(ordersTable)
@@ -141,6 +152,7 @@ export async function rewindNextOrderNumber(
   from: number,
   to: number,
 ): Promise<void> {
+  const shopSettingsTable = tableFor(database, shopSettingsDefinition);
   await database
     .update(shopSettingsTable)
     .set({ nextOrderNumber: to })

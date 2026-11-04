@@ -1,7 +1,20 @@
-import { and, asc, count, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, count, eq, inArray } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../database/client.js";
-import { usersTable } from "../users/users.table.js";
-import { type NewRole, type Role, rolesTable, userRolesTable } from "./roles.table.js";
+import { usersTable as usersDefinition } from "../users/users.table.js";
+import {
+  type NewRole,
+  type Role,
+  rolesTable as rolesDefinition,
+  userRolesTable as userRolesDefinition,
+} from "./roles.table.js";
+import {
+  insertIfNew,
+  insertReturning,
+  updateReturning,
+  upsert,
+} from "../database/dialect/writes.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
+import { idListIncludes, idListWithout } from "../database/dialect/expressions.js";
 
 /** Database reads and writes for roles and role assignments, nothing else. */
 
@@ -10,6 +23,7 @@ export async function findRoleByHandle(
   tenantId: string,
   handle: string,
 ): Promise<Role | undefined> {
+  const rolesTable = tableFor(database, rolesDefinition);
   const [role] = await database
     .select()
     .from(rolesTable)
@@ -23,6 +37,7 @@ export async function findRoleById(
   tenantId: string,
   roleId: string,
 ): Promise<Role | undefined> {
+  const rolesTable = tableFor(database, rolesDefinition);
   const [role] = await database
     .select()
     .from(rolesTable)
@@ -32,7 +47,8 @@ export async function findRoleById(
 }
 
 export async function insertRole(database: DatabaseOrTransaction, role: NewRole): Promise<Role> {
-  const [inserted] = await database.insert(rolesTable).values(role).returning();
+  const rolesTable = tableFor(database, rolesDefinition);
+  const [inserted] = await insertReturning(database, rolesTable, role);
   if (!inserted) {
     throw new Error("The database did not return the new role.");
   }
@@ -44,18 +60,16 @@ export async function upsertRoleByHandle(
   database: DatabaseOrTransaction,
   role: NewRole & { tenantId: string; handle: string },
 ): Promise<void> {
-  await database
-    .insert(rolesTable)
-    .values(role)
-    .onConflictDoUpdate({
-      target: [rolesTable.tenantId, rolesTable.handle],
-      set: {
-        name: role.name,
-        description: role.description,
-        permissions: role.permissions,
-        isBuiltIn: role.isBuiltIn,
-      },
-    });
+  const rolesTable = tableFor(database, rolesDefinition);
+  await upsert(database, rolesTable, role, {
+    target: [rolesTable.tenantId, rolesTable.handle],
+    set: {
+      name: role.name,
+      description: role.description,
+      permissions: role.permissions,
+      isBuiltIn: role.isBuiltIn,
+    },
+  });
 }
 
 export async function updateRoleRow(
@@ -63,15 +77,13 @@ export async function updateRoleRow(
   roleId: string,
   changes: Partial<Pick<Role, "name" | "description" | "permissions" | "requiresTwoFactor">>,
 ): Promise<Role | undefined> {
-  const [updated] = await database
-    .update(rolesTable)
-    .set(changes)
-    .where(eq(rolesTable.id, roleId))
-    .returning();
+  const rolesTable = tableFor(database, rolesDefinition);
+  const [updated] = await updateReturning(database, rolesTable, changes, eq(rolesTable.id, roleId));
   return updated;
 }
 
 export async function deleteRoleRow(database: DatabaseOrTransaction, roleId: string) {
+  const rolesTable = tableFor(database, rolesDefinition);
   await database.delete(rolesTable).where(eq(rolesTable.id, roleId));
 }
 
@@ -79,6 +91,8 @@ export async function listRoleRows(
   database: DatabaseOrTransaction,
   tenantId: string,
 ): Promise<Array<Role & { memberCount: number }>> {
+  const rolesTable = tableFor(database, rolesDefinition);
+  const userRolesTable = tableFor(database, userRolesDefinition);
   const roles = await database
     .select()
     .from(rolesTable)
@@ -97,7 +111,8 @@ export async function assignRoleToUser(
   userId: string,
   roleId: string,
 ): Promise<void> {
-  await database.insert(userRolesTable).values({ userId, roleId }).onConflictDoNothing();
+  const userRolesTable = tableFor(database, userRolesDefinition);
+  await insertIfNew(database, userRolesTable, { userId, roleId });
 }
 
 /** Gives the user exactly this one role, replacing any others. */
@@ -106,6 +121,7 @@ export async function replaceRolesOfUser(
   userId: string,
   roleId: string,
 ): Promise<void> {
+  const userRolesTable = tableFor(database, userRolesDefinition);
   await database.delete(userRolesTable).where(eq(userRolesTable.userId, userId));
   await database.insert(userRolesTable).values({ userId, roleId });
 }
@@ -115,6 +131,8 @@ export async function findRolesForUsers(
   database: DatabaseOrTransaction,
   userIds: readonly string[],
 ): Promise<Array<Role & { userId: string }>> {
+  const rolesTable = tableFor(database, rolesDefinition);
+  const userRolesTable = tableFor(database, userRolesDefinition);
   if (userIds.length === 0) {
     return [];
   }
@@ -132,6 +150,8 @@ export async function findPermissionListsForUser(
   database: DatabaseOrTransaction,
   userId: string,
 ): Promise<string[][]> {
+  const rolesTable = tableFor(database, rolesDefinition);
+  const userRolesTable = tableFor(database, userRolesDefinition);
   const rows = await database
     .select({ permissions: rolesTable.permissions })
     .from(userRolesTable)
@@ -146,6 +166,9 @@ export async function findActiveUserIdsWithRole(
   tenantId: string,
   handle: string,
 ): Promise<string[]> {
+  const rolesTable = tableFor(database, rolesDefinition);
+  const userRolesTable = tableFor(database, userRolesDefinition);
+  const usersTable = tableFor(database, usersDefinition);
   const rows = await database
     .select({ userId: userRolesTable.userId })
     .from(userRolesTable)
@@ -166,6 +189,8 @@ export async function findSiteListsForUser(
   database: DatabaseOrTransaction,
   userId: string,
 ): Promise<(string[] | null)[]> {
+  const rolesTable = tableFor(database, rolesDefinition);
+  const userRolesTable = tableFor(database, userRolesDefinition);
   const rows = await database
     .select({ siteIds: rolesTable.siteIds })
     .from(userRolesTable)
@@ -179,6 +204,7 @@ export async function updateRoleSiteIds(
   roleId: string,
   siteIds: string[] | null,
 ): Promise<void> {
+  const rolesTable = tableFor(database, rolesDefinition);
   await database
     .update(rolesTable)
     .set({ siteIds, updatedAt: new Date() })
@@ -190,8 +216,9 @@ export async function removeSiteFromRoles(
   database: DatabaseOrTransaction,
   siteId: string,
 ): Promise<void> {
+  const rolesTable = tableFor(database, rolesDefinition);
   await database
     .update(rolesTable)
-    .set({ siteIds: sql`array_remove(${rolesTable.siteIds}, ${siteId}::uuid)` })
-    .where(sql`${siteId}::uuid = any(${rolesTable.siteIds})`);
+    .set({ siteIds: idListWithout(database, rolesTable.siteIds, siteId) })
+    .where(idListIncludes(database, rolesTable.siteIds, siteId));
 }
