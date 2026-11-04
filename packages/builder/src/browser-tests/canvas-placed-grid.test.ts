@@ -63,12 +63,16 @@ function story(): { design: PageDocument; photoId: string } {
   };
 }
 
-async function openCanvas(design: PageDocument, selectedId: string): Promise<Page> {
+async function openCanvas(
+  design: PageDocument,
+  selectedId: string,
+  canMove?: boolean,
+): Promise<Page> {
   const page = await browser.newPage({ viewport: { width: 1000, height: 800 } });
   await page.setContent(canvasFrameSource());
   const { html, css } = renderPage(design, standardRegistry, { mode: "canvas" });
   await page.evaluate(
-    ({ html, css, selectedId }) => {
+    ({ html, css, selectedId, canMove }) => {
       const received: unknown[] = [];
       Object.assign(window, { received });
       window.addEventListener("message", (event) => received.push(event.data));
@@ -81,11 +85,12 @@ async function openCanvas(design: PageDocument, selectedId: string): Promise<Pag
           labels: { selected: "Photo", hovered: null },
           canTransform: true,
           rotateLabel: "Turn",
+          ...(canMove === undefined ? {} : { canMove }),
         },
         "*",
       );
     },
-    { html, css: `body{margin:0} ${designBaseStylesheet}\n${css}`, selectedId },
+    { html, css: `body{margin:0} ${designBaseStylesheet}\n${css}`, selectedId, canMove },
   );
   await page.waitForTimeout(100);
   return page;
@@ -144,6 +149,13 @@ describe("placed grids on the canvas", () => {
     const onIt = await openCanvas(design, photoId);
     expect(await onIt.locator(".lintel-grid-column--quiet").count()).toBe(10);
     await onIt.close();
+  });
+
+  it("keeps the columns out of a client's view, where nothing moves (LINTEL-UX-333)", async () => {
+    const { design, photoId } = story();
+    const page = await openCanvas(design, photoId, false);
+    expect(await page.locator(".lintel-grid-column").count()).toBe(0);
+    await page.close();
   });
 
   it("makes the selected element wider and taller with its corner handle", async () => {

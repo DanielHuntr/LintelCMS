@@ -189,10 +189,11 @@ export function runCanvasFrame(snap: typeof snapBox, fitGrid: typeof fitToGrid):
 
   /**
    * The columns of the placed grid that is selected, or that the selected element is on, so
-   * people see the grid they're placing things on before they start dragging.
+   * people see the grid they're placing things on before they start dragging. Where nothing
+   * can be moved, as for a client, they would mean nothing.
    */
   function drawSelectedGridColumns() {
-    if (editing) return;
+    if (editing || outline.canMove === false) return;
     const selected = nodeElement(outline.selectedId);
     const container =
       selected && isPlacedGrid(selected)
