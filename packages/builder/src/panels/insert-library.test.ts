@@ -37,6 +37,10 @@ describe("the insert library", () => {
       "Hero",
     );
     expect(searchInsertItems(items, "hero spaceship", words)).toEqual([]);
+    // Words inside descriptions no longer fill the list (LINTEL-UX-322).
+    const forms = searchInsertItems(items, "form", words).map((item) => item.label);
+    expect(forms[0]).toBe("Form");
+    expect(forms).not.toContain("Testimonial slider");
     expect(searchInsertItems(items, "   ", words)).toEqual([]);
   });
 

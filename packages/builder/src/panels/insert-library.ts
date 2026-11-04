@@ -137,8 +137,9 @@ export function groupInsertItems(items: readonly InsertItem[], kind: InsertKind)
 }
 
 /**
- * Items whose name, description, keywords or group has every word typed: names that start with the
- * search first, then names that have it, then the rest. `groupTitle`
+ * Items with every word typed in their name, or starting a word of their description, keywords
+ * or group (so "form" doesn't find "information"): names that start with the search first,
+ * then names that have it, then the rest. `groupTitle`
  * turns a group's string key into its words, so "pictures" finds everything in Pictures.
  */
 export function searchInsertItems(
@@ -149,9 +150,13 @@ export function searchInsertItems(
   const words = search.toLowerCase().split(/\s+/).filter(Boolean);
   if (words.length === 0) return [];
   const matches = items.filter((item) => {
-    const haystack =
-      `${item.label} ${item.description} ${item.keywords.join(" ")} ${groupTitle(item.groupTitle)}`.toLowerCase();
-    return words.every((word) => haystack.includes(word));
+    const name = item.label.toLowerCase();
+    const others = `${item.description} ${item.keywords.join(" ")} ${groupTitle(item.groupTitle)}`
+      .toLowerCase()
+      .split(/[^\p{L}\p{N}]+/u);
+    return words.every(
+      (word) => name.includes(word) || others.some((written) => written.startsWith(word)),
+    );
   });
   const phrase = words.join(" ");
   const rank = (item: InsertItem) => {
