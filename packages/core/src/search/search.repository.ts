@@ -4,6 +4,8 @@ import type { DatabaseOrTransaction } from "../database/client.js";
 import { entriesTable as entriesDefinition, type EntryStatus } from "../entries/entries.table.js";
 import { type AssetRow, assetsTable as assetsDefinition } from "../media/media.table.js";
 import { escapeLikePattern } from "./search-terms.js";
+import { documentHasWords } from "./word-starts.js";
+import { capabilitiesOf } from "../database/dialect/database-dialect.js";
 import { jsonText, likeIgnoringCase } from "../database/dialect/expressions.js";
 import { textSearch } from "../database/dialect/text-search.js";
 import { tableFor } from "../database/dialect/mysql-tables.js";
@@ -14,6 +16,7 @@ import { tableFor } from "../database/dialect/mysql-tables.js";
  * Entries are searched through `textSearch`. The document is the title, weighted highest, then
  * the slug, then every text value in the entry's fields, inside rich text and blocks included,
  * never the JSON keys. It doesn't stem or drop words, so it behaves the same in any language.
+ * Where the database can't tell where a word starts, each row found is checked in Node.
  */
 
 export interface EntrySearchRow {
@@ -25,6 +28,9 @@ export interface EntrySearchRow {
   collectionName: string;
   updatedAt: Date;
 }
+
+/** Rows read at a time on MySQL, doubled each time, as most searches stop at the first. */
+const FIRST_PAGE_OF_ROWS = 100;
 
 export async function searchEntries(
   database: DatabaseOrTransaction,
@@ -53,30 +59,55 @@ export async function searchEntries(
     `%${escapeLikePattern(search.phrase)}%`,
   );
 
-  return database
-    .select({
-      id: entriesTable.id,
-      title,
-      slug: entriesTable.slug,
-      status: entriesTable.status,
-      collectionHandle: collectionsTable.handle,
-      collectionName: collectionsTable.name,
-      updatedAt: entriesTable.updatedAt,
-    })
-    .from(entriesTable)
-    .innerJoin(collectionsTable, eq(collectionsTable.id, entriesTable.collectionId))
-    .where(
-      and(
-        eq(entriesTable.tenantId, tenantId),
-        search.siteIds === null ? undefined : inArray(entriesTable.siteId, [...search.siteIds]),
-        or(matches, titleContains),
-      ),
-    )
-    .orderBy(
-      desc(sql`${rank} + (case when ${titleContains} then 1 else 0 end)`),
-      desc(entriesTable.updatedAt),
-    )
-    .limit(search.limit);
+  const fields = {
+    id: entriesTable.id,
+    title,
+    slug: entriesTable.slug,
+    status: entriesTable.status,
+    collectionHandle: collectionsTable.handle,
+    collectionName: collectionsTable.name,
+    updatedAt: entriesTable.updatedAt,
+  };
+  const where = and(
+    eq(entriesTable.tenantId, tenantId),
+    search.siteIds === null ? undefined : inArray(entriesTable.siteId, [...search.siteIds]),
+    or(matches, titleContains),
+  );
+  const bestFirst = desc(sql`${rank} + (case when ${titleContains} then 1 else 0 end)`);
+
+  if (capabilitiesOf(database).searchFindsWordStarts) {
+    return database
+      .select(fields)
+      .from(entriesTable)
+      .innerJoin(collectionsTable, eq(collectionsTable.id, entriesTable.collectionId))
+      .where(where)
+      .orderBy(bestFirst, desc(entriesTable.updatedAt))
+      .limit(search.limit);
+  }
+
+  const kept: EntrySearchRow[] = [];
+  const phrase = search.phrase.toLowerCase();
+  let offset = 0;
+  for (let size = FIRST_PAGE_OF_ROWS; kept.length < search.limit; size *= 2) {
+    const rows = await database
+      .select({ ...fields, data: entriesTable.data })
+      .from(entriesTable)
+      .innerJoin(collectionsTable, eq(collectionsTable.id, entriesTable.collectionId))
+      .where(where)
+      .orderBy(bestFirst, desc(entriesTable.updatedAt), desc(entriesTable.id))
+      .limit(size)
+      .offset(offset);
+    for (const row of rows) {
+      const text = row.title ?? "";
+      const document = { title: text, slug: row.slug, values: row.data };
+      if (text.toLowerCase().includes(phrase) || documentHasWords(document, search.words)) {
+        kept.push({ ...row, data: undefined } as EntrySearchRow);
+      }
+    }
+    if (rows.length < size) break;
+    offset += size;
+  }
+  return kept.slice(0, search.limit);
 }
 
 /** Every word has to appear in the file name or the alt text. */

@@ -17,13 +17,25 @@ export interface DatabaseCapabilities {
   upsertsNameTheirKey: boolean;
   /** Whether an insert's values can read from the table being inserted into. */
   insertsReadTheirOwnTable: boolean;
+  /** Whether `textSearch` can tell where a word starts. If not, rows are checked in Node. */
+  searchFindsWordStarts: boolean;
 }
 
 const capabilities: Record<DatabaseDialect, DatabaseCapabilities> = {
-  postgres: { writesReturnRows: true, upsertsNameTheirKey: true, insertsReadTheirOwnTable: true },
+  postgres: {
+    writesReturnRows: true,
+    upsertsNameTheirKey: true,
+    insertsReadTheirOwnTable: true,
+    searchFindsWordStarts: true,
+  },
   // MariaDB has `returning` on inserts and deletes but not updates, and MySQL has none, so
   // both read rows back rather than Lintel keeping a third path.
-  mysql: { writesReturnRows: false, upsertsNameTheirKey: false, insertsReadTheirOwnTable: false },
+  mysql: {
+    writesReturnRows: false,
+    upsertsNameTheirKey: false,
+    insertsReadTheirOwnTable: false,
+    searchFindsWordStarts: false,
+  },
 };
 
 /**

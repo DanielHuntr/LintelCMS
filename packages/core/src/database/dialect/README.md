@@ -108,6 +108,8 @@ Handled here:
 - **`dashboard_layouts_one_owner` isn't there.** MySQL refuses a check on columns with `on
 delete` rules. The repository writes either a person or a role, never both.
 - **A value too long for a key** is refused with a plain 422 rather than an error.
+- **Search can't see where a word starts inside JSON,** so `searchEntries` checks each row it
+  finds in Node, with `search/word-starts.ts`, which splits text as Postgres does.
 - **Times in one transaction differ.** Postgres's `now()` is the same all through a
   transaction, and Node sets each row's time on MySQL. Don't rely on two rows matching.
 

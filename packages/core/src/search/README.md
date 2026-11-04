@@ -28,6 +28,12 @@ always safe to hand to Postgres, and treats every word as a prefix: "abo us" fin
   middle of a word ("port" in "Support"). Best match first, then most recently changed.
 - **Media** matches every word in the file name or alt text, newest first.
 
+On MySQL and MariaDB the database finds every entry with a word anywhere inside a longer one,
+with `like` and `json_search`, and `word-starts.ts` then keeps those where each word starts a
+word, splitting text as Postgres does. `word-starts.dialects.test.ts` runs the same cases on
+every database. The order is close and not the same: Postgres counts how often a word appears
+and how near the words are, and MySQL only counts where it appears.
+
 There is no search index yet: page and post counts on a single site are small enough for a
 scan. If that changes, a GIN index on the same expression is the next step.
 

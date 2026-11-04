@@ -9,8 +9,10 @@ import { dialectOf } from "./database-dialect.js";
  * column, which a JSON column can't have, so there each word is looked for with `like`, and
  * in JSON with `json_search`, which reads values and never keys.
  *
- * The one difference people can see: on Postgres a word has to match the start of a word,
- * and on MySQL it can match anywhere inside one, so "port" also finds "support" in a body.
+ * Those can't tell where a word starts inside a JSON value, so on MySQL `matches` also finds
+ * "support" for "port". `capabilitiesOf(database).searchFindsWordStarts` says so, and
+ * `documentHasWords` in `search/word-starts.ts` then gives the final answer on each row.
+ * The rank does know where words start in the title and slug, which are short.
  */
 
 export interface SearchedDocument {
@@ -23,7 +25,7 @@ export interface SearchedDocument {
 }
 
 export interface TextSearch {
-  /** Every word is in the document. */
+  /** Every word is in the document, or on MySQL, inside some word of it. */
   matches: SQL;
   /** A number: higher is a better match. */
   rank: SQL;
@@ -39,6 +41,11 @@ function postgresTextSearch(document: SearchedDocument, words: readonly string[]
   return { matches: sql`${vector} @@ ${query}`, rank: sql`ts_rank(${vector}, ${query})` };
 }
 
+/** Starts a word: Unicode classes, as `\\b` only knows ASCII on MariaDB. Words are safe here. */
+function startOfWordPattern(word: string): string {
+  return String.raw`(^|[^\p{L}\p{N}])${word}`;
+}
+
 function mysqlTextSearch(document: SearchedDocument, words: readonly string[]): TextSearch {
   const title = sql`lower(${document.title})`;
   const slug = sql`lower(replace(${document.slug}, '-', ' '))`;
@@ -50,11 +57,13 @@ function mysqlTextSearch(document: SearchedDocument, words: readonly string[]): 
       inTitle: sql`${title} like ${pattern}`,
       inSlug: sql`${slug} like ${pattern}`,
       inValues: sql`json_search(${values}, 'one', ${pattern}) is not null`,
+      startsInTitle: sql`${title} regexp ${startOfWordPattern(word)}`,
+      startsInSlug: sql`${slug} regexp ${startOfWordPattern(word)}`,
     };
   });
   const scores = parts.map(
-    ({ inTitle, inSlug, inValues }) =>
-      sql`(case when ${inTitle} then 1 else 0 end) + (case when ${inSlug} then 0.4 else 0 end) + (case when ${inValues} then 0.2 else 0 end)`,
+    ({ startsInTitle, startsInSlug, inValues }) =>
+      sql`(case when ${startsInTitle} then 1 else 0 end) + (case when ${startsInSlug} then 0.4 else 0 end) + (case when ${inValues} then 0.2 else 0 end)`,
   );
   const everyWord = parts.map(({ inTitle, inSlug, inValues }) =>
     sql.join([sql`(`, inTitle, sql` or `, inSlug, sql` or `, inValues, sql`)`]),
