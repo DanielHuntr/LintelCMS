@@ -126,9 +126,6 @@
     "filter clause": 2,
     "json field access": 1
   },
-  "dashboard/dashboard.repository.ts": {
-    "upsert": 2
-  },
   "database/columns.ts": {
     "pg-core import": 1
   },
@@ -184,14 +181,6 @@
     "json containment": 1,
     "postgres function": 1,
     "returning": 3
-  },
-  "globals/global-sets.repository.ts": {
-    "returning": 1,
-    "upsert": 1
-  },
-  "globals/global-values.repository.ts": {
-    "cast with ::": 1,
-    "upsert": 1
   },
   "health/health.repository.ts": {
     "postgres catalogue": 1

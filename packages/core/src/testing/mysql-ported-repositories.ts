@@ -23,4 +23,7 @@ export const mysqlPortedRepositories = [
   "collections/collections.repository.ts",
   "taxonomies/taxonomies.repository.ts",
   "taxonomies/terms.repository.ts",
+  "globals/global-sets.repository.ts",
+  "globals/global-values.repository.ts",
+  "dashboard/dashboard.repository.ts",
 ];
