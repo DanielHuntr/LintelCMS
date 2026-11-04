@@ -1,5 +1,6 @@
 import type { Transaction } from "../../database/client.js";
 import { DEFAULT_TENANT_ID } from "../../database/columns.js";
+import { dialectOf } from "../../database/dialect/database-dialect.js";
 import { describeLine } from "../checkouts/line-names.js";
 import { lockCheckoutRow, updateCheckoutRow } from "../checkouts/checkouts.repository.js";
 import type { CheckoutRow } from "../checkouts/checkouts.table.js";
@@ -77,12 +78,18 @@ export async function placeOrderForPayment(
     return { outcome: "needs_review", checkout: { ...checkout, status: "needs_review", problem } };
   }
 
+  // On Postgres a new customer and their order get the same time, that of the transaction,
+  // and clearing test orders relies on it. On MySQL each row's time is set as it's written, so
+  // the order's is taken first: a customer this order made is never older than it.
+  const orderTime = dialectOf(transaction) === "mysql" ? { createdAt: new Date() } : {};
+
   // A checkout whose person was erased while it was open has nobody to remember.
   const customer = checkout.email
     ? await recordCustomerForOrder(transaction, checkout.email, checkout.shippingAddress)
     : null;
   const { number, prefix } = await takeNextOrderNumber(transaction, DEFAULT_TENANT_ID);
   const order = await insertOrder(transaction, {
+    ...orderTime,
     tenantId: DEFAULT_TENANT_ID,
     number,
     name: `${prefix}${number}`,
