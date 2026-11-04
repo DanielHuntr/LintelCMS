@@ -1,6 +1,12 @@
 import { and, desc, eq, ne } from "drizzle-orm";
 import type { Database, DatabaseOrTransaction } from "../database/client.js";
-import { type NewSession, type Session, sessionsTable } from "./sessions.table.js";
+import {
+  type NewSession,
+  type Session,
+  sessionsTable as sessionsDefinition,
+} from "./sessions.table.js";
+import { deleteReturning, insertReturning } from "../database/dialect/writes.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /**
  * Database reads and writes for sessions. No rules live here: deciding whether a
@@ -8,7 +14,8 @@ import { type NewSession, type Session, sessionsTable } from "./sessions.table.j
  */
 
 export async function insertSession(database: Database, session: NewSession): Promise<Session> {
-  const [inserted] = await database.insert(sessionsTable).values(session).returning();
+  const sessionsTable = tableFor(database, sessionsDefinition);
+  const [inserted] = await insertReturning(database, sessionsTable, session);
   if (!inserted) {
     throw new Error("The database did not return the new session.");
   }
@@ -19,6 +26,7 @@ export async function findSessionByTokenHash(
   database: Database,
   tokenHash: string,
 ): Promise<Session | undefined> {
+  const sessionsTable = tableFor(database, sessionsDefinition);
   const [session] = await database
     .select()
     .from(sessionsTable)
@@ -32,10 +40,12 @@ export async function updateSessionExpiry(
   sessionId: string,
   times: { lastUsedAt: Date; expiresAt: Date },
 ): Promise<void> {
+  const sessionsTable = tableFor(database, sessionsDefinition);
   await database.update(sessionsTable).set(times).where(eq(sessionsTable.id, sessionId));
 }
 
 export async function deleteSessionById(database: Database, sessionId: string): Promise<void> {
+  const sessionsTable = tableFor(database, sessionsDefinition);
   await database.delete(sessionsTable).where(eq(sessionsTable.id, sessionId));
 }
 
@@ -43,6 +53,7 @@ export async function deleteSessionByTokenHash(
   database: Database,
   tokenHash: string,
 ): Promise<void> {
+  const sessionsTable = tableFor(database, sessionsDefinition);
   await database.delete(sessionsTable).where(eq(sessionsTable.tokenHash, tokenHash));
 }
 
@@ -51,10 +62,10 @@ export async function deleteSessionsForUser(
   database: DatabaseOrTransaction,
   userId: string,
 ): Promise<number> {
-  const deleted = await database
-    .delete(sessionsTable)
-    .where(eq(sessionsTable.userId, userId))
-    .returning({ id: sessionsTable.id });
+  const sessionsTable = tableFor(database, sessionsDefinition);
+  const deleted = await deleteReturning(database, sessionsTable, eq(sessionsTable.userId, userId), {
+    id: sessionsTable.id,
+  });
   return deleted.length;
 }
 
@@ -62,6 +73,7 @@ export function listSessionsForUser(
   database: DatabaseOrTransaction,
   userId: string,
 ): Promise<Session[]> {
+  const sessionsTable = tableFor(database, sessionsDefinition);
   return database
     .select()
     .from(sessionsTable)
@@ -75,10 +87,13 @@ export async function deleteSessionOfUser(
   userId: string,
   sessionId: string,
 ): Promise<boolean> {
-  const deleted = await database
-    .delete(sessionsTable)
-    .where(and(eq(sessionsTable.userId, userId), eq(sessionsTable.id, sessionId)))
-    .returning({ id: sessionsTable.id });
+  const sessionsTable = tableFor(database, sessionsDefinition);
+  const deleted = await deleteReturning(
+    database,
+    sessionsTable,
+    and(eq(sessionsTable.userId, userId), eq(sessionsTable.id, sessionId)),
+    { id: sessionsTable.id },
+  );
   return deleted.length > 0;
 }
 
@@ -87,9 +102,12 @@ export async function deleteOtherSessionsOfUser(
   userId: string,
   keepTokenHash: string,
 ): Promise<number> {
-  const deleted = await database
-    .delete(sessionsTable)
-    .where(and(eq(sessionsTable.userId, userId), ne(sessionsTable.tokenHash, keepTokenHash)))
-    .returning({ id: sessionsTable.id });
+  const sessionsTable = tableFor(database, sessionsDefinition);
+  const deleted = await deleteReturning(
+    database,
+    sessionsTable,
+    and(eq(sessionsTable.userId, userId), ne(sessionsTable.tokenHash, keepTokenHash)),
+    { id: sessionsTable.id },
+  );
   return deleted.length;
 }

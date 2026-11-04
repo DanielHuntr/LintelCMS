@@ -9,4 +9,7 @@ export const mysqlPortedRepositories = [
   "site-fonts/site-fonts.repository.ts",
   "settings/settings.repository.ts",
   "interface-languages/interface-languages.repository.ts",
+  "sessions/sessions.repository.ts",
+  "one-time-tokens/one-time-tokens.repository.ts",
+  "security-log/security-log.repository.ts",
 ];

@@ -234,9 +234,6 @@
     "returning": 1,
     "upsert": 1
   },
-  "one-time-tokens/one-time-tokens.repository.ts": {
-    "returning": 1
-  },
   "passkeys/passkeys.repository.ts": {
     "returning": 2
   },
@@ -286,9 +283,6 @@
   },
   "server-check/server-check.service.ts": {
     "postgres catalogue": 1
-  },
-  "sessions/sessions.repository.ts": {
-    "returning": 4
   },
   "setup/setup.repository.ts": {
     "advisory lock": 1,
