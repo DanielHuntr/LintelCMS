@@ -77,7 +77,10 @@ export function readRepository(path: string): RepositoryFacts {
       if (statement.importClause?.isTypeOnly || !bindings || !ts.isNamedImports(bindings)) continue;
       for (const element of bindings.elements) {
         const original = (element.propertyName ?? element.name).text;
-        if (!element.isTypeOnly && original.endsWith("Table")) {
+        const fromTableFile = /.tables?.js$/.test(
+          (statement.moduleSpecifier as ts.StringLiteral).text,
+        );
+        if (fromTableFile && !element.isTypeOnly && original.endsWith("Table")) {
           importedTables.set(element.name.text, original);
         }
       }

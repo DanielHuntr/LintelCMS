@@ -157,7 +157,9 @@ function keysOf(table: PgTable, mysqlColumns: AnyMySqlColumn[]) {
 const KEY_TEXT_LENGTHS: Record<string, number> = {
   tenant_id: 64,
   day: 16,
-  // Addresses and passkey ids can be long, and these keys have room.
+  dimension: 64,
+  // Addresses, which are analytics' keys, and passkey ids can be long, and there is room.
+  key: 500,
   from_path: 700,
   credential_id: 700,
 };
