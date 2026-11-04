@@ -1,10 +1,18 @@
-import { and, asc, desc, eq, ilike, inArray, isNull, ne, or, type SQL, sql } from "drizzle-orm";
-import { clientReviewsTable } from "../client-editing/client-reviews.table.js";
-import { collectionsTable } from "../collections/collections.table.js";
+import { and, asc, desc, eq, inArray, isNull, ne, or, type SQL, sql } from "drizzle-orm";
+import { clientReviewsTable as clientReviewsDefinition } from "../client-editing/client-reviews.table.js";
+import { collectionsTable as collectionsDefinition } from "../collections/collections.table.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
-import { entriesTable, type EntryStatus } from "../entries/entries.table.js";
-import { sitesTable } from "../sites/sites.table.js";
-import { usersTable } from "../users/users.table.js";
+import { entriesTable as entriesDefinition, type EntryStatus } from "../entries/entries.table.js";
+import { sitesTable as sitesDefinition } from "../sites/sites.table.js";
+import { usersTable as usersDefinition } from "../users/users.table.js";
+import {
+  jsonAsText,
+  jsonText,
+  likeIgnoringCase,
+  orderNullsLast,
+} from "../database/dialect/expressions.js";
+import { jsonOnlyKeys, positionInList } from "../database/dialect/json-expressions.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /** Database reads and writes for the content tree, nothing else. */
 
@@ -38,29 +46,44 @@ export interface TreeNodeRow {
   publishedAt: Date | null;
 }
 
-const titleColumn = sql<string | null>`${entriesTable.data}->>'title'`;
+function titleColumn(database: DatabaseOrTransaction) {
+  const entriesTable = tableFor(database, entriesDefinition);
+  return jsonText(database, entriesTable.data, "title");
+}
 
-const nodeColumns = {
-  id: entriesTable.id,
-  title: titleColumn,
-  slug: entriesTable.slug,
-  status: entriesTable.status,
-  // jsonb equality ignores key order, as the editor's own comparison does.
-  hasUnpublishedChanges: sql<boolean>`(${entriesTable.publishedData} is not null and ${entriesTable.data} <> ${entriesTable.publishedData})`,
-  scheduledFor: entriesTable.scheduledFor,
-  updatedAt: entriesTable.updatedAt,
-  parentId: entriesTable.parentId,
-  locale: entriesTable.locale,
-  sortOrder: entriesTable.sortOrder,
-  collectionHandle: collectionsTable.handle,
-  collectionName: collectionsTable.name,
-  childrenAsCollection: collectionsTable.childrenAsCollection,
-  isSiteStart: sql<boolean>`(${entriesTable.parentId} is null and ${collectionsTable.structure} = 'tree' and ${collectionsTable.routePattern} is not null)`,
-  routePattern: collectionsTable.routePattern,
-  publishedAt: entriesTable.publishedAt,
-};
+function nodeColumns(database: DatabaseOrTransaction) {
+  const collectionsTable = tableFor(database, collectionsDefinition);
+  const entriesTable = tableFor(database, entriesDefinition);
+  return {
+    id: entriesTable.id,
+    title: titleColumn(database),
+    slug: entriesTable.slug,
+    status: entriesTable.status,
+    // Ignores key order, as the editor's own comparison does: jsonb and MySQL's json compare
+    // by value, and on MariaDB, where json is text, keys are always written in one order.
+    hasUnpublishedChanges:
+      sql<boolean>`(${entriesTable.publishedData} is not null and ${entriesTable.data} <> ${entriesTable.publishedData})`.mapWith(
+        Boolean,
+      ),
+    scheduledFor: entriesTable.scheduledFor,
+    updatedAt: entriesTable.updatedAt,
+    parentId: entriesTable.parentId,
+    locale: entriesTable.locale,
+    sortOrder: entriesTable.sortOrder,
+    collectionHandle: collectionsTable.handle,
+    collectionName: collectionsTable.name,
+    childrenAsCollection: collectionsTable.childrenAsCollection,
+    isSiteStart:
+      sql<boolean>`(${entriesTable.parentId} is null and ${collectionsTable.structure} = 'tree' and ${collectionsTable.routePattern} is not null)`.mapWith(
+        Boolean,
+      ),
+    routePattern: collectionsTable.routePattern,
+    publishedAt: entriesTable.publishedAt,
+  };
+}
 
-function placeCondition(place: NodePlace): SQL | undefined {
+function placeCondition(database: DatabaseOrTransaction, place: NodePlace): SQL | undefined {
+  const entriesTable = tableFor(database, entriesDefinition);
   if ("entryIds" in place) {
     return place.entryIds.length === 0 ? sql`false` : inArray(entriesTable.id, [...place.entryIds]);
   }
@@ -78,15 +101,17 @@ function placeCondition(place: NodePlace): SQL | undefined {
 /** Hand-set order for trees and lists; newest first for dated collections. */
 export type NodeOrder = "manual" | "dated";
 
-const orderings: Record<NodeOrder, SQL[]> = {
-  manual: [asc(entriesTable.sortOrder), asc(entriesTable.createdAt)],
-  dated: [
-    desc(
-      sql`coalesce(${entriesTable.publishedAt}, ${entriesTable.scheduledFor}, ${entriesTable.createdAt})`,
-    ),
-    desc(entriesTable.createdAt),
-  ],
-};
+function orderingOf(database: DatabaseOrTransaction, order: NodeOrder): SQL[] {
+  const entriesTable = tableFor(database, entriesDefinition);
+  return order === "manual"
+    ? [asc(entriesTable.sortOrder), asc(entriesTable.createdAt)]
+    : [
+        desc(
+          sql`coalesce(${entriesTable.publishedAt}, ${entriesTable.scheduledFor}, ${entriesTable.createdAt})`,
+        ),
+        desc(entriesTable.createdAt),
+      ];
+}
 
 export async function listNodeRows(
   database: DatabaseOrTransaction,
@@ -94,12 +119,14 @@ export async function listNodeRows(
   order: NodeOrder,
   page: { limit: number; offset: number },
 ): Promise<TreeNodeRow[]> {
+  const collectionsTable = tableFor(database, collectionsDefinition);
+  const entriesTable = tableFor(database, entriesDefinition);
   return database
-    .select(nodeColumns)
+    .select(nodeColumns(database))
     .from(entriesTable)
     .innerJoin(collectionsTable, eq(collectionsTable.id, entriesTable.collectionId))
-    .where(placeCondition(place))
-    .orderBy(...orderings[order])
+    .where(placeCondition(database, place))
+    .orderBy(...orderingOf(database, order))
     .limit(page.limit)
     .offset(page.offset);
 }
@@ -108,10 +135,11 @@ export async function countNodes(
   database: DatabaseOrTransaction,
   place: NodePlace,
 ): Promise<number> {
+  const entriesTable = tableFor(database, entriesDefinition);
   const [row] = await database
     .select({ count: sql<number>`count(*)`.mapWith(Number) })
     .from(entriesTable)
-    .where(placeCondition(place));
+    .where(placeCondition(database, place));
   return row?.count ?? 0;
 }
 
@@ -120,6 +148,7 @@ export async function countChildrenOf(
   database: DatabaseOrTransaction,
   parentIds: readonly string[],
 ): Promise<Map<string, number>> {
+  const entriesTable = tableFor(database, entriesDefinition);
   if (parentIds.length === 0) {
     return new Map();
   }
@@ -140,6 +169,7 @@ export async function countTopLevelByCollection(
   siteId: string,
   locale: string,
 ): Promise<Map<string, number>> {
+  const entriesTable = tableFor(database, entriesDefinition);
   const rows = await database
     .select({
       collectionId: entriesTable.collectionId,
@@ -170,19 +200,26 @@ export interface ItemFilters {
 export type ItemSort =
   { by: "title" | "updated" | "status" | "published" } | { by: "field"; handle: string };
 
-function itemSortExpression(sort: ItemSort): SQL {
-  if (sort.by === "field") return sql`${entriesTable.data}->>${sort.handle}`;
-  if (sort.by === "title") return sql`lower(${titleColumn})`;
+function itemSortExpression(database: DatabaseOrTransaction, sort: ItemSort): SQL {
+  const entriesTable = tableFor(database, entriesDefinition);
+  if (sort.by === "field") return jsonText(database, entriesTable.data, sort.handle);
+  if (sort.by === "title") return sql`lower(${titleColumn(database)})`;
   if (sort.by === "status") return sql`${entriesTable.status}`;
   if (sort.by === "published") return sql`${entriesTable.publishedAt}`;
   return sql`${entriesTable.updatedAt}`;
 }
 
-function itemConditions(place: NodePlace, filters: ItemFilters): SQL | undefined {
+function itemConditions(
+  database: DatabaseOrTransaction,
+  place: NodePlace,
+  filters: ItemFilters,
+): SQL | undefined {
+  const clientReviewsTable = tableFor(database, clientReviewsDefinition);
+  const entriesTable = tableFor(database, entriesDefinition);
   const escaped = filters.search?.replace(/[\\%_]/g, (character) => `\\${character}`);
   return and(
-    placeCondition(place),
-    escaped ? ilike(titleColumn, `%${escaped}%`) : undefined,
+    placeCondition(database, place),
+    escaped ? likeIgnoringCase(database, titleColumn(database), `%${escaped}%`) : undefined,
     filters.status ? eq(entriesTable.status, filters.status) : undefined,
     filters.waitingForReview
       ? sql`exists (select 1 from ${clientReviewsTable} where ${clientReviewsTable.entryId} = ${entriesTable.id} and ${clientReviewsTable.status} = 'waiting')`
@@ -210,27 +247,22 @@ export async function listItemRows(
     publishedAt: Date | null;
   })[]
 > {
-  const values =
-    options.columns.length === 0
-      ? sql<Record<string, unknown>>`'{}'::jsonb`
-      : sql<Record<string, unknown>>`jsonb_build_object(${sql.join(
-          options.columns.map((handle) => sql`${handle}::text, ${entriesTable.data}->${handle}`),
-          sql`, `,
-        )})`;
+  const collectionsTable = tableFor(database, collectionsDefinition);
+  const entriesTable = tableFor(database, entriesDefinition);
+  const usersTable = tableFor(database, usersDefinition);
+  const values = jsonOnlyKeys(database, entriesTable.data, options.columns);
   const ordering =
     typeof options.sort === "string"
       ? options.sort === "manual" && "entryIds" in place
-        ? [givenOrder(place.entryIds)]
-        : orderings[options.sort]
+        ? [givenOrder(database, place.entryIds)]
+        : orderingOf(database, options.sort)
       : [
-          options.direction === "asc"
-            ? sql`${itemSortExpression(options.sort)} asc nulls last`
-            : sql`${itemSortExpression(options.sort)} desc nulls last`,
+          orderNullsLast(database, itemSortExpression(database, options.sort), options.direction),
           desc(entriesTable.createdAt),
         ];
   return database
     .select({
-      ...nodeColumns,
+      ...nodeColumns(database),
       values,
       updatedByName: usersTable.name,
       routePattern: collectionsTable.routePattern,
@@ -239,19 +271,17 @@ export async function listItemRows(
     .from(entriesTable)
     .innerJoin(collectionsTable, eq(collectionsTable.id, entriesTable.collectionId))
     .leftJoin(usersTable, eq(usersTable.id, entriesTable.updatedBy))
-    .where(itemConditions(place, options.filters))
+    .where(itemConditions(database, place, options.filters))
     .orderBy(...ordering)
     .limit(options.page.limit)
     .offset(options.page.offset);
 }
 
 /** The order the ids were given in: a branch's tree order, for "Every level". */
-function givenOrder(entryIds: readonly string[]): SQL {
+function givenOrder(database: DatabaseOrTransaction, entryIds: readonly string[]): SQL {
+  const entriesTable = tableFor(database, entriesDefinition);
   if (entryIds.length === 0) return sql`1`;
-  return sql`array_position(array[${sql.join(
-    entryIds.map((id) => sql`${id}`),
-    sql`, `,
-  )}]::uuid[], ${entriesTable.id})`;
+  return positionInList(database, entriesTable.id, entryIds);
 }
 
 /** The content types of the entries at a place, for the collection view's type filter. */
@@ -259,6 +289,8 @@ export async function listTypesAt(
   database: DatabaseOrTransaction,
   place: NodePlace,
 ): Promise<{ id: string; handle: string; name: string }[]> {
+  const collectionsTable = tableFor(database, collectionsDefinition);
+  const entriesTable = tableFor(database, entriesDefinition);
   return database
     .selectDistinct({
       id: collectionsTable.id,
@@ -267,7 +299,7 @@ export async function listTypesAt(
     })
     .from(entriesTable)
     .innerJoin(collectionsTable, eq(collectionsTable.id, entriesTable.collectionId))
-    .where(placeCondition(place))
+    .where(placeCondition(database, place))
     .orderBy(asc(collectionsTable.name));
 }
 
@@ -276,10 +308,11 @@ export async function countItems(
   place: NodePlace,
   filters: ItemFilters,
 ): Promise<number> {
+  const entriesTable = tableFor(database, entriesDefinition);
   const [row] = await database
     .select({ count: sql<number>`count(*)`.mapWith(Number) })
     .from(entriesTable)
-    .where(itemConditions(place, filters));
+    .where(itemConditions(database, place, filters));
   return row?.count ?? 0;
 }
 
@@ -288,11 +321,12 @@ export async function listSiblingIds(
   database: DatabaseOrTransaction,
   place: NodePlace,
 ): Promise<string[]> {
+  const entriesTable = tableFor(database, entriesDefinition);
   const rows = await database
     .select({ id: entriesTable.id })
     .from(entriesTable)
-    .where(placeCondition(place))
-    .orderBy(...orderings.manual);
+    .where(placeCondition(database, place))
+    .orderBy(...orderingOf(database, "manual"));
   return rows.map((row) => row.id);
 }
 
@@ -302,6 +336,7 @@ export async function renumberSiblings(
   orderedIds: readonly string[],
   parentId: string | null,
 ): Promise<void> {
+  const entriesTable = tableFor(database, entriesDefinition);
   if (orderedIds.length === 0) {
     return;
   }
@@ -328,6 +363,7 @@ export async function listChildLinks(
   database: DatabaseOrTransaction,
   parentIds: readonly string[],
 ): Promise<{ id: string; parentId: string }[]> {
+  const entriesTable = tableFor(database, entriesDefinition);
   if (parentIds.length === 0) {
     return [];
   }
@@ -344,11 +380,13 @@ export async function findNodeRows(
   database: DatabaseOrTransaction,
   entryIds: readonly string[],
 ): Promise<TreeNodeRow[]> {
+  const collectionsTable = tableFor(database, collectionsDefinition);
+  const entriesTable = tableFor(database, entriesDefinition);
   if (entryIds.length === 0) {
     return [];
   }
   return database
-    .select(nodeColumns)
+    .select(nodeColumns(database))
     .from(entriesTable)
     .innerJoin(collectionsTable, eq(collectionsTable.id, entriesTable.collectionId))
     .where(inArray(entriesTable.id, [...entryIds]));
@@ -362,22 +400,24 @@ export async function searchNodeRows(
   locale: string,
   limit: number,
 ): Promise<TreeNodeRow[]> {
+  const collectionsTable = tableFor(database, collectionsDefinition);
+  const entriesTable = tableFor(database, entriesDefinition);
   const escaped = search.replace(/[\\%_]/g, (character) => `\\${character}`);
   return (
     database
-      .select(nodeColumns)
+      .select(nodeColumns(database))
       .from(entriesTable)
       .innerJoin(collectionsTable, eq(collectionsTable.id, entriesTable.collectionId))
       .where(
         and(
           eq(entriesTable.siteId, siteId),
           eq(entriesTable.locale, locale),
-          ilike(titleColumn, `%${escaped}%`),
+          likeIgnoringCase(database, titleColumn(database), `%${escaped}%`),
         ),
       )
       // Titles that start with the search come first, then the most recently changed.
       .orderBy(
-        sql`case when ${titleColumn} ilike ${`${escaped}%`} then 0 else 1 end`,
+        sql`case when ${likeIgnoringCase(database, titleColumn(database), `${escaped}%`)} then 0 else 1 end`,
         desc(entriesTable.updatedAt),
       )
       .limit(limit)
@@ -388,6 +428,7 @@ export async function listSites(
   database: DatabaseOrTransaction,
   tenantId: string,
 ): Promise<{ id: string; name: string; locale: string }[]> {
+  const sitesTable = tableFor(database, sitesDefinition);
   return database
     .select({ id: sitesTable.id, name: sitesTable.name, locale: sitesTable.locale })
     .from(sitesTable)
@@ -404,17 +445,19 @@ export async function findNodesMentioning(
   entryId: string,
   limit: number,
 ): Promise<TreeNodeRow[]> {
+  const collectionsTable = tableFor(database, collectionsDefinition);
+  const entriesTable = tableFor(database, entriesDefinition);
   const quoted = `%"${entryId}"%`;
   return database
-    .select(nodeColumns)
+    .select(nodeColumns(database))
     .from(entriesTable)
     .innerJoin(collectionsTable, eq(collectionsTable.id, entriesTable.collectionId))
     .where(
       and(
         ne(entriesTable.id, entryId),
         or(
-          sql`${entriesTable.data}::text like ${quoted}`,
-          sql`${entriesTable.publishedData}::text like ${quoted}`,
+          sql`${jsonAsText(database, entriesTable.data)} like ${quoted}`,
+          sql`${jsonAsText(database, entriesTable.publishedData)} like ${quoted}`,
         ),
       ),
     )
@@ -427,6 +470,7 @@ export async function findPersonNames(
   database: DatabaseOrTransaction,
   userIds: readonly string[],
 ): Promise<Map<string, string>> {
+  const usersTable = tableFor(database, usersDefinition);
   if (userIds.length === 0) {
     return new Map();
   }

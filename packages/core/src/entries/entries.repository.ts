@@ -1,10 +1,22 @@
-import { and, asc, desc, eq, ilike, inArray, isNull, or, type SQL, sql } from "drizzle-orm";
-import { type Blueprint, blueprintsTable } from "../blueprints/blueprints.table.js";
-import { collectionsTable } from "../collections/collections.table.js";
+import { and, asc, desc, eq, inArray, isNull, or, type SQL, sql } from "drizzle-orm";
+import {
+  type Blueprint,
+  blueprintsTable as blueprintsDefinition,
+} from "../blueprints/blueprints.table.js";
+import { collectionsTable as collectionsDefinition } from "../collections/collections.table.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
-import { usersTable } from "../users/users.table.js";
+import { usersTable as usersDefinition } from "../users/users.table.js";
 import type { TreePosition } from "./entry-tree.js";
-import { type Entry, entriesTable, type EntryStatus, type NewEntry } from "./entries.table.js";
+import {
+  type Entry,
+  entriesTable as entriesDefinition,
+  type EntryStatus,
+  type NewEntry,
+} from "./entries.table.js";
+import { insertReturning, updateReturning } from "../database/dialect/writes.js";
+import { jsonAsText, jsonText, likeIgnoringCase } from "../database/dialect/expressions.js";
+import { jsonKeyEquals } from "../database/dialect/json-expressions.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /** Database reads and writes for entries, nothing else. */
 
@@ -52,29 +64,39 @@ export interface EntryWithDetails {
   updatedByName: string | null;
 }
 
-const titleColumn = sql<string | null>`${entriesTable.data}->>'title'`;
+function titleColumn(database: DatabaseOrTransaction) {
+  const entriesTable = tableFor(database, entriesDefinition);
+  return jsonText(database, entriesTable.data, "title");
+}
 
-const summaryColumns = {
-  id: entriesTable.id,
-  title: titleColumn,
-  slug: entriesTable.slug,
-  status: entriesTable.status,
-  parentId: entriesTable.parentId,
-  locale: entriesTable.locale,
-  originId: entriesTable.originId,
-  updatedAt: entriesTable.updatedAt,
-  publishedAt: entriesTable.publishedAt,
-  scheduledFor: entriesTable.scheduledFor,
-  updatedById: usersTable.id,
-  updatedByName: usersTable.name,
-};
+function summaryColumns(database: DatabaseOrTransaction) {
+  const entriesTable = tableFor(database, entriesDefinition);
+  const usersTable = tableFor(database, usersDefinition);
+  return {
+    id: entriesTable.id,
+    title: titleColumn(database),
+    slug: entriesTable.slug,
+    status: entriesTable.status,
+    parentId: entriesTable.parentId,
+    locale: entriesTable.locale,
+    originId: entriesTable.originId,
+    updatedAt: entriesTable.updatedAt,
+    publishedAt: entriesTable.publishedAt,
+    scheduledFor: entriesTable.scheduledFor,
+    updatedById: usersTable.id,
+    updatedByName: usersTable.name,
+  };
+}
 
-function matching(filters: EntryFilters): SQL | undefined {
+function matching(database: DatabaseOrTransaction, filters: EntryFilters): SQL | undefined {
+  const entriesTable = tableFor(database, entriesDefinition);
   return and(
     eq(entriesTable.collectionId, filters.collectionId),
     filters.siteId ? eq(entriesTable.siteId, filters.siteId) : undefined,
     filters.status ? eq(entriesTable.status, filters.status) : undefined,
-    filters.search ? ilike(titleColumn, `%${escapeLikePattern(filters.search)}%`) : undefined,
+    filters.search
+      ? likeIgnoringCase(database, titleColumn(database), `%${escapeLikePattern(filters.search)}%`)
+      : undefined,
     filters.parentId ? eq(entriesTable.parentId, filters.parentId) : undefined,
     filters.locale ? eq(entriesTable.locale, filters.locale) : undefined,
   );
@@ -85,16 +107,18 @@ function escapeLikePattern(text: string): string {
   return text.replace(/[\\%_]/g, (character) => `\\${character}`);
 }
 
-const orderings: Record<EntryOrder, SQL[]> = {
-  // Drafts have no publish date yet; they sort by when they are due, or were started.
-  dated: [
-    desc(
-      sql`coalesce(${entriesTable.publishedAt}, ${entriesTable.scheduledFor}, ${entriesTable.createdAt})`,
-    ),
-    desc(entriesTable.createdAt),
-  ],
-  manual: [asc(entriesTable.sortOrder), asc(entriesTable.createdAt)],
-};
+function orderingOf(database: DatabaseOrTransaction, order: EntryOrder): SQL[] {
+  const entriesTable = tableFor(database, entriesDefinition);
+  return order === "dated"
+    ? // Drafts have no publish date yet; they sort by when they are due, or were started.
+      [
+        desc(
+          sql`coalesce(${entriesTable.publishedAt}, ${entriesTable.scheduledFor}, ${entriesTable.createdAt})`,
+        ),
+        desc(entriesTable.createdAt),
+      ]
+    : [asc(entriesTable.sortOrder), asc(entriesTable.createdAt)];
+}
 
 export async function listEntrySummaries(
   database: DatabaseOrTransaction,
@@ -102,12 +126,14 @@ export async function listEntrySummaries(
   order: EntryOrder,
   page?: { limit: number; offset: number },
 ): Promise<EntrySummaryRow[]> {
+  const entriesTable = tableFor(database, entriesDefinition);
+  const usersTable = tableFor(database, usersDefinition);
   const query = database
-    .select(summaryColumns)
+    .select(summaryColumns(database))
     .from(entriesTable)
     .leftJoin(usersTable, eq(usersTable.id, entriesTable.updatedBy))
-    .where(matching(filters))
-    .orderBy(...orderings[order]);
+    .where(matching(database, filters))
+    .orderBy(...orderingOf(database, order));
   return page ? query.limit(page.limit).offset(page.offset) : query;
 }
 
@@ -120,6 +146,7 @@ export async function findEntryFieldValues(
   entryIds: readonly string[],
   handles: readonly string[],
 ): Promise<Map<string, Record<string, unknown>>> {
+  const entriesTable = tableFor(database, entriesDefinition);
   if (entryIds.length === 0 || handles.length === 0) {
     return new Map();
   }
@@ -139,10 +166,11 @@ export async function countEntries(
   database: DatabaseOrTransaction,
   filters: EntryFilters,
 ): Promise<number> {
+  const entriesTable = tableFor(database, entriesDefinition);
   const [row] = await database
     .select({ count: sql<number>`count(*)`.mapWith(Number) })
     .from(entriesTable)
-    .where(matching(filters));
+    .where(matching(database, filters));
   return row?.count ?? 0;
 }
 
@@ -152,6 +180,7 @@ export async function listEntryPositions(
   collectionId: string,
   siteId?: string,
 ): Promise<TreePosition[]> {
+  const entriesTable = tableFor(database, entriesDefinition);
   return database
     .select({
       id: entriesTable.id,
@@ -172,6 +201,7 @@ export async function findEntryById(
   database: DatabaseOrTransaction,
   entryId: string,
 ): Promise<Entry | undefined> {
+  const entriesTable = tableFor(database, entriesDefinition);
   const [entry] = await database
     .select()
     .from(entriesTable)
@@ -185,6 +215,10 @@ export async function findEntryWithDetails(
   database: DatabaseOrTransaction,
   entryId: string,
 ): Promise<EntryWithDetails | undefined> {
+  const blueprintsTable = tableFor(database, blueprintsDefinition);
+  const collectionsTable = tableFor(database, collectionsDefinition);
+  const entriesTable = tableFor(database, entriesDefinition);
+  const usersTable = tableFor(database, usersDefinition);
   const [row] = await database
     .select({
       entry: entriesTable,
@@ -205,7 +239,8 @@ export async function insertEntry(
   database: DatabaseOrTransaction,
   entry: NewEntry,
 ): Promise<Entry> {
-  const [inserted] = await database.insert(entriesTable).values(entry).returning();
+  const entriesTable = tableFor(database, entriesDefinition);
+  const [inserted] = await insertReturning(database, entriesTable, entry);
   if (!inserted) {
     throw new Error("The database did not return the new entry.");
   }
@@ -217,11 +252,13 @@ export async function updateEntryRow(
   entryId: string,
   changes: Partial<Omit<NewEntry, "id" | "tenantId" | "collectionId" | "siteId">>,
 ): Promise<Entry> {
-  const [updated] = await database
-    .update(entriesTable)
-    .set(changes)
-    .where(eq(entriesTable.id, entryId))
-    .returning();
+  const entriesTable = tableFor(database, entriesDefinition);
+  const [updated] = await updateReturning(
+    database,
+    entriesTable,
+    changes,
+    eq(entriesTable.id, entryId),
+  );
   if (!updated) {
     throw new Error("The database did not return the updated entry.");
   }
@@ -232,6 +269,7 @@ export async function deleteEntryRow(
   database: DatabaseOrTransaction,
   entryId: string,
 ): Promise<void> {
+  const entriesTable = tableFor(database, entriesDefinition);
   await database.delete(entriesTable).where(eq(entriesTable.id, entryId));
 }
 
@@ -244,6 +282,7 @@ export async function findAncestorIds(
   database: DatabaseOrTransaction,
   entryId: string,
 ): Promise<string[]> {
+  const entriesTable = tableFor(database, entriesDefinition);
   const path: string[] = [];
   let current: string | null = entryId;
   while (current !== null && !path.includes(current)) {
@@ -267,6 +306,7 @@ export async function moveChildrenToParent(
   entryId: string,
   newParentId: string | null,
 ): Promise<void> {
+  const entriesTable = tableFor(database, entriesDefinition);
   await database
     .update(entriesTable)
     .set({ parentId: newParentId })
@@ -278,6 +318,7 @@ export async function clearOriginReferences(
   database: DatabaseOrTransaction,
   entryId: string,
 ): Promise<void> {
+  const entriesTable = tableFor(database, entriesDefinition);
   await database
     .update(entriesTable)
     .set({ originId: null })
@@ -288,6 +329,7 @@ export async function clearParentsInCollection(
   database: DatabaseOrTransaction,
   collectionId: string,
 ): Promise<void> {
+  const entriesTable = tableFor(database, entriesDefinition);
   await database
     .update(entriesTable)
     .set({ parentId: null })
@@ -300,6 +342,7 @@ export async function findSlugsStartingWith(
   scope: SlugScope,
   base: string,
 ): Promise<string[]> {
+  const entriesTable = tableFor(database, entriesDefinition);
   const rows = await database
     .select({ id: entriesTable.id, slug: entriesTable.slug })
     .from(entriesTable)
@@ -318,7 +361,12 @@ export async function findSlugsStartingWith(
  * Siblings: the top level of one collection, or everything under one parent. Children of
  * one parent can come from several collections (see src/content-tree), so they share one order.
  */
-function siblingsOf(collectionId: string, parentId: string | null): SQL | undefined {
+function siblingsOf(
+  database: DatabaseOrTransaction,
+  collectionId: string,
+  parentId: string | null,
+): SQL | undefined {
+  const entriesTable = tableFor(database, entriesDefinition);
   return parentId === null
     ? and(eq(entriesTable.collectionId, collectionId), sql`${entriesTable.parentId} is null`)
     : eq(entriesTable.parentId, parentId);
@@ -330,10 +378,11 @@ export async function findNextSortOrder(
   collectionId: string,
   parentId: string | null,
 ): Promise<number> {
+  const entriesTable = tableFor(database, entriesDefinition);
   const [row] = await database
     .select({ highest: sql<number | null>`max(${entriesTable.sortOrder})`.mapWith(Number) })
     .from(entriesTable)
-    .where(siblingsOf(collectionId, parentId));
+    .where(siblingsOf(database, collectionId, parentId));
   return row?.highest === null || row?.highest === undefined ? 0 : row.highest + 1;
 }
 
@@ -344,10 +393,16 @@ export async function makeRoomAfter(
   parentId: string | null,
   sortOrder: number,
 ): Promise<void> {
+  const entriesTable = tableFor(database, entriesDefinition);
   await database
     .update(entriesTable)
     .set({ sortOrder: sql`${entriesTable.sortOrder} + 1` })
-    .where(and(siblingsOf(collectionId, parentId), sql`${entriesTable.sortOrder} > ${sortOrder}`));
+    .where(
+      and(
+        siblingsOf(database, collectionId, parentId),
+        sql`${entriesTable.sortOrder} > ${sortOrder}`,
+      ),
+    );
 }
 
 export async function updateEntryPosition(
@@ -355,6 +410,7 @@ export async function updateEntryPosition(
   entryId: string,
   position: { parentId: string | null; sortOrder: number },
 ): Promise<void> {
+  const entriesTable = tableFor(database, entriesDefinition);
   await database.update(entriesTable).set(position).where(eq(entriesTable.id, entryId));
 }
 
@@ -367,18 +423,19 @@ export async function findEntriesMentioning(
   database: DatabaseOrTransaction,
   id: string,
 ): Promise<{ entryId: string; title: string | null }[]> {
+  const entriesTable = tableFor(database, entriesDefinition);
   const quoted = `%"${id}"%`;
   // A picture kept only by its address (an element's cursor picture) names the file's id in it.
   const address = `%/media/${id}/file%`;
   return database
-    .select({ entryId: entriesTable.id, title: titleColumn })
+    .select({ entryId: entriesTable.id, title: titleColumn(database) })
     .from(entriesTable)
     .where(
       or(
-        sql`${entriesTable.data}::text like ${quoted}`,
-        sql`${entriesTable.publishedData}::text like ${quoted}`,
-        sql`${entriesTable.data}::text like ${address}`,
-        sql`${entriesTable.publishedData}::text like ${address}`,
+        sql`${jsonAsText(database, entriesTable.data)} like ${quoted}`,
+        sql`${jsonAsText(database, entriesTable.publishedData)} like ${quoted}`,
+        sql`${jsonAsText(database, entriesTable.data)} like ${address}`,
+        sql`${jsonAsText(database, entriesTable.publishedData)} like ${address}`,
       ),
     );
 }
@@ -389,6 +446,7 @@ export async function findFirstTopLevelEntry(
   database: DatabaseOrTransaction,
   scope: { collectionId: string; siteId: string; locale: string },
 ): Promise<Entry | undefined> {
+  const entriesTable = tableFor(database, entriesDefinition);
   const [first] = await database
     .select()
     .from(entriesTable)
@@ -409,11 +467,12 @@ export async function listTranslationFamily(
   database: DatabaseOrTransaction,
   rootId: string,
 ): Promise<{ id: string; locale: string; title: string | null; status: EntryStatus }[]> {
+  const entriesTable = tableFor(database, entriesDefinition);
   return database
     .select({
       id: entriesTable.id,
       locale: entriesTable.locale,
-      title: titleColumn,
+      title: titleColumn(database),
       status: entriesTable.status,
     })
     .from(entriesTable)
@@ -431,6 +490,7 @@ export async function hasEntryWithValue(
   handle: string,
   value: unknown,
 ): Promise<boolean> {
+  const entriesTable = tableFor(database, entriesDefinition);
   const rows = await database
     .select({ id: entriesTable.id })
     .from(entriesTable)
@@ -439,7 +499,7 @@ export async function hasEntryWithValue(
         eq(entriesTable.collectionId, where.collectionId),
         eq(entriesTable.locale, where.locale),
         where.exceptEntryId ? sql`${entriesTable.id} <> ${where.exceptEntryId}` : undefined,
-        sql`${entriesTable.data} -> ${handle} = ${JSON.stringify(value)}::jsonb`,
+        jsonKeyEquals(database, entriesTable.data, handle, value),
       ),
     )
     .limit(1);
@@ -451,6 +511,7 @@ export async function listEntrySiteIds(
   database: DatabaseOrTransaction,
   entryIds: readonly string[],
 ): Promise<string[]> {
+  const entriesTable = tableFor(database, entriesDefinition);
   if (entryIds.length === 0) {
     return [];
   }
@@ -467,6 +528,8 @@ export async function findExistingEntryIds(
   entryIds: readonly string[],
   collectionHandles: readonly string[],
 ): Promise<string[]> {
+  const collectionsTable = tableFor(database, collectionsDefinition);
+  const entriesTable = tableFor(database, entriesDefinition);
   if (entryIds.length === 0) {
     return [];
   }
@@ -490,6 +553,7 @@ export async function findEntryValuesMentioning(
   database: DatabaseOrTransaction,
   id: string,
 ): Promise<Pick<Entry, "id" | "data" | "publishedData">[]> {
+  const entriesTable = tableFor(database, entriesDefinition);
   const quoted = `%"${id}"%`;
   return database
     .select({
@@ -500,8 +564,8 @@ export async function findEntryValuesMentioning(
     .from(entriesTable)
     .where(
       or(
-        sql`${entriesTable.data}::text like ${quoted}`,
-        sql`${entriesTable.publishedData}::text like ${quoted}`,
+        sql`${jsonAsText(database, entriesTable.data)} like ${quoted}`,
+        sql`${jsonAsText(database, entriesTable.publishedData)} like ${quoted}`,
       ),
     );
 }
@@ -515,12 +579,14 @@ export async function findSameSlugPages(
   database: DatabaseOrTransaction,
   entry: Pick<Entry, "id" | "siteId" | "locale" | "slug" | "collectionId">,
 ) {
+  const collectionsTable = tableFor(database, collectionsDefinition);
+  const entriesTable = tableFor(database, entriesDefinition);
   return database
     .select({
       id: entriesTable.id,
       slug: entriesTable.slug,
       publishedAt: entriesTable.publishedAt,
-      title: sql<string | null>`${entriesTable.data}->>'title'`,
+      title: titleColumn(database),
       routePattern: collectionsTable.routePattern,
     })
     .from(entriesTable)

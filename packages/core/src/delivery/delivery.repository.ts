@@ -1,8 +1,11 @@
 import { and, asc, desc, eq, inArray, isNotNull, or, type SQL, sql } from "drizzle-orm";
-import { collectionsTable } from "../collections/collections.table.js";
+import { collectionsTable as collectionsDefinition } from "../collections/collections.table.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
-import { entriesTable } from "../entries/entries.table.js";
-import { sitesTable } from "../sites/sites.table.js";
+import { entriesTable as entriesDefinition } from "../entries/entries.table.js";
+import { sitesTable as sitesDefinition } from "../sites/sites.table.js";
+import { jsonText } from "../database/dialect/expressions.js";
+import { jsonKeyListIncludes } from "../database/dialect/json-expressions.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /**
  * Database reads for the public delivery API. Every query here filters on
@@ -29,31 +32,43 @@ export interface PublishedEntryFilter {
   withTerm?: { termId: string; fieldHandles: readonly string[] };
 }
 
-const publishedColumns = {
-  id: entriesTable.id,
-  originId: entriesTable.originId,
-  locale: entriesTable.locale,
-  slug: entriesTable.slug,
-  publishedAt: entriesTable.publishedAt,
-  publishedData: sql<Record<string, unknown>>`${entriesTable.publishedData}`,
-};
+function publishedColumns(database: DatabaseOrTransaction) {
+  const entriesTable = tableFor(database, entriesDefinition);
+  return {
+    id: entriesTable.id,
+    originId: entriesTable.originId,
+    locale: entriesTable.locale,
+    slug: entriesTable.slug,
+    publishedAt: entriesTable.publishedAt,
+    publishedData: sql<Record<string, unknown>>`${entriesTable.publishedData}`.mapWith(
+      entriesTable.publishedData,
+    ) as SQL<Record<string, unknown>>,
+  };
+}
 
-function publishedIn(filter: PublishedEntryFilter): SQL | undefined {
+function publishedIn(
+  database: DatabaseOrTransaction,
+  filter: PublishedEntryFilter,
+): SQL | undefined {
+  const entriesTable = tableFor(database, entriesDefinition);
   return and(
     eq(entriesTable.collectionId, filter.collectionId),
     filter.siteId ? eq(entriesTable.siteId, filter.siteId) : undefined,
     eq(entriesTable.locale, filter.locale),
     isNotNull(entriesTable.publishedData),
-    filter.withTerm ? choseTerm(filter.withTerm) : undefined,
+    filter.withTerm ? choseTerm(database, filter.withTerm) : undefined,
   );
 }
 
 /** Terms fields store a list of ids, so "chose" means the list contains the id. */
-function choseTerm({ termId, fieldHandles }: NonNullable<PublishedEntryFilter["withTerm"]>) {
-  const listed = JSON.stringify([termId]);
+function choseTerm(
+  database: DatabaseOrTransaction,
+  { termId, fieldHandles }: NonNullable<PublishedEntryFilter["withTerm"]>,
+) {
+  const entriesTable = tableFor(database, entriesDefinition);
   return or(
-    ...fieldHandles.map(
-      (handle) => sql`(${entriesTable.publishedData} -> ${handle}) @> ${listed}::jsonb`,
+    ...fieldHandles.map((handle) =>
+      jsonKeyListIncludes(database, entriesTable.publishedData, handle, termId),
     ),
   );
 }
@@ -64,10 +79,11 @@ export async function listPublishedEntries(
   newestFirst: boolean,
   page: { limit: number; offset: number },
 ): Promise<PublishedEntryRow[]> {
+  const entriesTable = tableFor(database, entriesDefinition);
   return database
-    .select(publishedColumns)
+    .select(publishedColumns(database))
     .from(entriesTable)
-    .where(publishedIn(filter))
+    .where(publishedIn(database, filter))
     .orderBy(
       ...(newestFirst
         ? [desc(entriesTable.publishedAt), desc(entriesTable.createdAt)]
@@ -81,10 +97,11 @@ export async function countPublishedEntries(
   database: DatabaseOrTransaction,
   filter: PublishedEntryFilter,
 ): Promise<number> {
+  const entriesTable = tableFor(database, entriesDefinition);
   const [row] = await database
     .select({ count: sql<number>`count(*)`.mapWith(Number) })
     .from(entriesTable)
-    .where(publishedIn(filter));
+    .where(publishedIn(database, filter));
   return row?.count ?? 0;
 }
 
@@ -105,6 +122,7 @@ export async function findDraftEntry(
   where:
     { entryId: string } | { collectionId: string; siteId: string; locale: string; slug: string },
 ): Promise<DraftEntryRow | undefined> {
+  const entriesTable = tableFor(database, entriesDefinition);
   const [entry] = await database
     .select({
       id: entriesTable.id,
@@ -136,10 +154,11 @@ export async function findPublishedEntryBySlug(
   filter: PublishedEntryFilter,
   slug: string,
 ): Promise<PublishedEntryRow | undefined> {
+  const entriesTable = tableFor(database, entriesDefinition);
   const [entry] = await database
-    .select(publishedColumns)
+    .select(publishedColumns(database))
     .from(entriesTable)
-    .where(and(publishedIn(filter), eq(entriesTable.slug, slug)))
+    .where(and(publishedIn(database, filter), eq(entriesTable.slug, slug)))
     .limit(1);
   return entry;
 }
@@ -149,8 +168,9 @@ export async function listPublishedTranslations(
   database: DatabaseOrTransaction,
   rootId: string,
 ): Promise<PublishedEntryRow[]> {
+  const entriesTable = tableFor(database, entriesDefinition);
   return database
-    .select(publishedColumns)
+    .select(publishedColumns(database))
     .from(entriesTable)
     .where(
       and(
@@ -180,6 +200,9 @@ export async function findPublishedEntryLinks(
   database: DatabaseOrTransaction,
   entryIds: readonly string[],
 ): Promise<PublishedEntryLinkRow[]> {
+  const collectionsTable = tableFor(database, collectionsDefinition);
+  const entriesTable = tableFor(database, entriesDefinition);
+  const sitesTable = tableFor(database, sitesDefinition);
   if (entryIds.length === 0) {
     return [];
   }
@@ -189,7 +212,7 @@ export async function findPublishedEntryLinks(
       originId: entriesTable.originId,
       locale: entriesTable.locale,
       slug: entriesTable.slug,
-      title: sql<string | null>`${entriesTable.publishedData}->>'title'`,
+      title: jsonText(database, entriesTable.publishedData, "title"),
       publishedAt: entriesTable.publishedAt,
       collectionHandle: collectionsTable.handle,
       routePattern: collectionsTable.routePattern,

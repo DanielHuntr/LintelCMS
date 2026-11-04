@@ -1,7 +1,15 @@
-import { and, eq, inArray, sql } from "drizzle-orm";
-import { collectionsTable } from "../collections/collections.table.js";
+import { and, eq, inArray } from "drizzle-orm";
+import { collectionsTable as collectionsDefinition } from "../collections/collections.table.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
-import { entriesTable } from "./entries.table.js";
+import { entriesTable as entriesDefinition } from "./entries.table.js";
+import { jsonValue } from "../database/dialect/expressions.js";
+import {
+  jsonHasKey,
+  jsonIsObject,
+  jsonLiteral,
+  jsonWithKey,
+} from "../database/dialect/json-expressions.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /** Database reads and writes for a field whose type or choices changed. See field-changes.service.ts. */
 
@@ -16,17 +24,19 @@ export async function listFieldValues(
   blueprintId: string,
   handle: string,
 ): Promise<StoredFieldValue[]> {
+  const collectionsTable = tableFor(database, collectionsDefinition);
+  const entriesTable = tableFor(database, entriesDefinition);
   const rows = await database
     .select({
       entryId: entriesTable.id,
-      value: sql<unknown>`${entriesTable.data} -> ${handle}::text`,
+      value: jsonValue(database, entriesTable.data, handle),
     })
     .from(entriesTable)
     .innerJoin(collectionsTable, eq(collectionsTable.id, entriesTable.collectionId))
     .where(
       and(
         eq(collectionsTable.blueprintId, blueprintId),
-        sql`jsonb_exists(${entriesTable.data}, ${handle}::text)`,
+        jsonHasKey(database, entriesTable.data, handle),
       ),
     );
   return rows;
@@ -39,22 +49,23 @@ export async function replaceFieldValue(
   handle: string,
   value: unknown,
 ): Promise<void> {
+  const entriesTable = tableFor(database, entriesDefinition);
   if (entryIds.length === 0) return;
-  const json = JSON.stringify(value);
+  const json = jsonLiteral(database, value);
   await database
     .update(entriesTable)
-    .set({ data: sql`jsonb_set(${entriesTable.data}, array[${handle}::text], ${json}::jsonb)` })
+    .set({ data: jsonWithKey(database, entriesTable.data, handle, json) })
     .where(inArray(entriesTable.id, [...entryIds]));
   await database
     .update(entriesTable)
     .set({
-      publishedData: sql`jsonb_set(${entriesTable.publishedData}, array[${handle}::text], ${json}::jsonb)`,
+      publishedData: jsonWithKey(database, entriesTable.publishedData, handle, json),
     })
     .where(
       and(
         inArray(entriesTable.id, [...entryIds]),
-        sql`jsonb_typeof(${entriesTable.publishedData}) = 'object'`,
-        sql`jsonb_exists(${entriesTable.publishedData}, ${handle}::text)`,
+        jsonIsObject(database, entriesTable.publishedData),
+        jsonHasKey(database, entriesTable.publishedData, handle),
       ),
     );
 }

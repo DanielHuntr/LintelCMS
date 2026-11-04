@@ -1,18 +1,19 @@
-import { and, desc, eq, ilike, inArray, or, sql, type SQL } from "drizzle-orm";
-import { collectionsTable } from "../collections/collections.table.js";
+import { and, desc, eq, inArray, or, sql, type SQL } from "drizzle-orm";
+import { collectionsTable as collectionsDefinition } from "../collections/collections.table.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
-import { entriesTable, type EntryStatus } from "../entries/entries.table.js";
-import { type AssetRow, assetsTable } from "../media/media.table.js";
-import { escapeLikePattern, prefixTsQuery } from "./search-terms.js";
+import { entriesTable as entriesDefinition, type EntryStatus } from "../entries/entries.table.js";
+import { type AssetRow, assetsTable as assetsDefinition } from "../media/media.table.js";
+import { escapeLikePattern } from "./search-terms.js";
+import { jsonText, likeIgnoringCase } from "../database/dialect/expressions.js";
+import { textSearch } from "../database/dialect/text-search.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /**
  * Database reads for search, nothing else.
  *
- * Entries use Postgres full-text search (the built-in database is Postgres too, so it works
- * there the same way). The document is the title, weighted highest, then the slug, then every
- * text value in the entry's fields, inside rich text and blocks included:
- * `jsonb_to_tsvector(..., '["string"]')` reads string values only, never the JSON keys. The
- * "simple" configuration doesn't stem or drop words, so it behaves the same in any language.
+ * Entries are searched through `textSearch`. The document is the title, weighted highest, then
+ * the slug, then every text value in the entry's fields, inside rich text and blocks included,
+ * never the JSON keys. It doesn't stem or drop words, so it behaves the same in any language.
  */
 
 export interface EntrySearchRow {
@@ -25,14 +26,6 @@ export interface EntrySearchRow {
   updatedAt: Date;
 }
 
-const titleText = sql`coalesce(${entriesTable.data}->>'title', '')`;
-
-const entryDocument = sql`(
-  setweight(to_tsvector('simple', ${titleText}), 'A') ||
-  setweight(to_tsvector('simple', replace(${entriesTable.slug}, '-', ' ')), 'B') ||
-  setweight(jsonb_to_tsvector('simple', ${entriesTable.data}, '["string"]'), 'C')
-)`;
-
 export async function searchEntries(
   database: DatabaseOrTransaction,
   tenantId: string,
@@ -44,14 +37,26 @@ export async function searchEntries(
     siteIds: readonly string[] | null;
   },
 ): Promise<EntrySearchRow[]> {
-  const query = sql`to_tsquery('simple', ${prefixTsQuery(search.words)})`;
+  const collectionsTable = tableFor(database, collectionsDefinition);
+  const entriesTable = tableFor(database, entriesDefinition);
+  const title = jsonText(database, entriesTable.data, "title");
+  const titleText = sql<string>`coalesce(${title}, '')`;
+  const { matches, rank } = textSearch(
+    database,
+    { title: titleText, slug: entriesTable.slug, values: entriesTable.data },
+    search.words,
+  );
   // A title containing the phrase anywhere also counts, for the middle of a word ("port" in "Support").
-  const titleContains = ilike(sql<string>`${titleText}`, `%${escapeLikePattern(search.phrase)}%`);
+  const titleContains = likeIgnoringCase(
+    database,
+    titleText,
+    `%${escapeLikePattern(search.phrase)}%`,
+  );
 
   return database
     .select({
       id: entriesTable.id,
-      title: sql<string | null>`${entriesTable.data}->>'title'`,
+      title,
       slug: entriesTable.slug,
       status: entriesTable.status,
       collectionHandle: collectionsTable.handle,
@@ -64,13 +69,11 @@ export async function searchEntries(
       and(
         eq(entriesTable.tenantId, tenantId),
         search.siteIds === null ? undefined : inArray(entriesTable.siteId, [...search.siteIds]),
-        or(sql`${entryDocument} @@ ${query}`, titleContains),
+        or(matches, titleContains),
       ),
     )
     .orderBy(
-      desc(
-        sql`ts_rank(${entryDocument}, ${query}) + (case when ${titleContains} then 1 else 0 end)`,
-      ),
+      desc(sql`${rank} + (case when ${titleContains} then 1 else 0 end)`),
       desc(entriesTable.updatedAt),
     )
     .limit(search.limit);
@@ -82,10 +85,14 @@ export async function searchAssets(
   tenantId: string,
   search: { words: readonly string[]; limit: number },
 ): Promise<AssetRow[]> {
+  const assetsTable = tableFor(database, assetsDefinition);
   const wordConditions = search.words
     .map((word) => {
       const pattern = `%${escapeLikePattern(word)}%`;
-      return or(ilike(assetsTable.filename, pattern), ilike(assetsTable.alt, pattern));
+      return or(
+        likeIgnoringCase(database, assetsTable.filename, pattern),
+        likeIgnoringCase(database, assetsTable.alt, pattern),
+      );
     })
     .filter((condition): condition is SQL => condition !== undefined);
 
