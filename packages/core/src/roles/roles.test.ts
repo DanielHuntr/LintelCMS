@@ -8,6 +8,7 @@ import { requestsAs, type SendRequest, startTestServer } from "../testing/test-s
 import { createTestUser, signInAndGetCookies } from "../testing/test-users.js";
 import { corePermissionGroups } from "./permission-catalog.js";
 import { builtInRoles } from "./built-in-roles.js";
+import { hasPermission } from "./permissions.js";
 import { rolesTable } from "./roles.table.js";
 
 describe("roles", () => {
@@ -75,6 +76,11 @@ describe("roles", () => {
         expect(permission.permission).toMatch(/^[a-z-]+:[a-z-]+$/);
       }
     }
+  });
+
+  it("lets an Admin run A/B tests, as they can do everything but change owners (LINTEL-FUNC-039)", () => {
+    const admin = builtInRoles.find((role) => role.handle === "admin");
+    expect(hasPermission(admin?.permissions ?? [], "experiments:manage")).toBe(true);
   });
 
   it("only gives built-in roles permissions the catalog describes", () => {
