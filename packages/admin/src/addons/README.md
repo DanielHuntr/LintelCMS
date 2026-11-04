@@ -20,7 +20,8 @@ their own stylesheet (`adminStyles` in their package.json), which is loaded with
 
 `/build/addons` (`AddonsPage.tsx`): installed add-ons with whether each is on, and those
 that can't run with why. Choosing one opens `AddonDetailsDialog.tsx`: its switch (saved
-through `PUT /plugins`), the honest line about full access, then folded sections from
+through `PUT /plugins`), a link to its own screen while it's on, the honest line about full
+access, then folded sections from
 `GET /addons/:id/details`, stored data first and open (`AddonAbout.tsx`). Each item is
 marked "Checked by Lintel" or "Says the add-on". `AddonRemoval.tsx` exports its data, and
 keeps or deletes it before the remove command. Settings get a form drawn from their JSON Schema (`settingsForm.ts`,
