@@ -134,6 +134,40 @@ interface UpsertOptions<TTable extends PgTable> {
   otherKeysCannotClash?: boolean;
 }
 
+/** Like `upsert`, for one row, returning it as stored. */
+export async function upsertReturning<TTable extends PgTable>(
+  database: DatabaseOrTransaction,
+  table: TTable,
+  value: PgInsertValue<TTable>,
+  options: UpsertOptions<TTable>,
+): Promise<RowsOf<TTable>> {
+  if (capabilitiesOf(database).writesReturnRows) {
+    const { target, set } = options;
+    return database
+      .insert(table)
+      .values(value as never)
+      .onConflictDoUpdate({ target, set: set as PgUpdateSetSource<PgTable> })
+      .returning() as unknown as Promise<RowsOf<TTable>>;
+  }
+  return database.transaction(async (transaction) => {
+    await upsert(transaction, table, value, options);
+    const rows = await transaction
+      .select()
+      .from(table as PgTable)
+      .where(whereKeyMatches(table, options.target, value as Row));
+    return rows as RowsOf<TTable>;
+  });
+}
+
+/** Finds a row by the values it was written with in the columns of a unique key. */
+function whereKeyMatches(table: PgTable, target: ConflictTarget, row: Row): SQL | undefined {
+  const names = columnNames(target);
+  const columns = Object.entries(getTableColumns(table)).filter(([, column]) =>
+    names.includes(column.name),
+  );
+  return and(...columns.map(([key, column]) => eq(column, row[key])));
+}
+
 interface MysqlUpsert {
   onDuplicateKeyUpdate(config: { set: unknown }): Promise<unknown>;
 }

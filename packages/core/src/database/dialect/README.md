@@ -39,23 +39,25 @@ export async function listSiteFontRows(database: DatabaseOrTransaction, tenantId
 3. Add a `*.dialects.test.ts` using `describeOnEveryDatabase`, and add the repository to
    `src/testing/mysql-ported-repositories.ts`.
 
-| Instead of                             | Use                                                 |
-| -------------------------------------- | --------------------------------------------------- |
-| `.insert().values().returning()`       | `insertReturning(database, table, values, fields?)` |
-| `.update().set().where().returning()`  | `updateReturning(database, table, set, where)`      |
-| `.delete().where().returning()`        | `deleteReturning(database, table, where)`           |
-| `.onConflictDoUpdate({ target, set })` | `upsert(database, table, values, { target, set })`  |
-| `.onConflictDoNothing()`               | `insertIfNew`, or `insertIfNewReturning`            |
-| `data->>'title'`, `data -> 'design'`   | `jsonText`, `jsonValue`                             |
-| `tags @> '["sale"]'`                   | `jsonListIncludes`                                  |
-| `data::text`                           | `jsonAsText`                                        |
-| `= any(ids)`, `array_remove(ids, id)`  | `idListIncludes`, `idListWithout`                   |
-| `ilike`                                | `likeIgnoringCase`                                  |
-| `count(*) filter (where ...)`          | `countWhere`                                        |
-| `nulls last`                           | `orderNullsLast`                                    |
-| `to_char(... at time zone 'UTC', ...)` | `utcDay`                                            |
-| `... - make_interval(days => ...)`     | `daysBefore`                                        |
-| checking for error code `23505`        | `isUniqueViolation`                                 |
+| Instead of                               | Use                                                 |
+| ---------------------------------------- | --------------------------------------------------- |
+| `.insert().values().returning()`         | `insertReturning(database, table, values, fields?)` |
+| `.update().set().where().returning()`    | `updateReturning(database, table, set, where)`      |
+| `.delete().where().returning()`          | `deleteReturning(database, table, where)`           |
+| `.onConflictDoUpdate({ target, set })`   | `upsert(database, table, values, { target, set })`  |
+| `.onConflictDoUpdate().returning()`      | `upsertReturning(database, table, row, options)`    |
+| `.onConflictDoNothing()`                 | `insertIfNew`, or `insertIfNewReturning`            |
+| `data->>'title'`, `data -> 'design'`     | `jsonText`, `jsonValue`                             |
+| `tags @> '["sale"]'`                     | `jsonListIncludes`                                  |
+| `data::text`                             | `jsonAsText`                                        |
+| `= any(ids)`, `array_remove(ids, id)`    | `idListIncludes`, `idListWithout`                   |
+| `ilike`                                  | `likeIgnoringCase`                                  |
+| `count(*) filter (where ...)`            | `countWhere`                                        |
+| `selectDistinctOn`, newest of each group | `selectNewestPerGroup` (in `reads.ts`)              |
+| `nulls last`                             | `orderNullsLast`                                    |
+| `to_char(... at time zone 'UTC', ...)`   | `utcDay`                                            |
+| `... - make_interval(days => ...)`       | `daysBefore`                                        |
+| checking for error code `23505`          | `isUniqueViolation`                                 |
 
 ## The one type lie, and what keeps it honest
 
@@ -98,6 +100,7 @@ To remember when moving a query:
 | `database-dialect.ts` | Which dialect a database speaks, and what it can do          |
 | `mysql-tables.ts`     | Working out MySQL tables; `tableFor`                         |
 | `writes.ts`           | `returning`, upserts and insert-if-new on each database      |
+| `reads.ts`            | The newest row of each group                                 |
 | `expressions.ts`      | JSON, lists, case, counting, ordering and date maths         |
 | `database-errors.ts`  | What a failed write means, on each database                  |
 | `mysql-database.ts`   | Opening MySQL and MariaDB (only the dialect tests do so far) |

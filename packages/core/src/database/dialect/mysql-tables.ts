@@ -246,7 +246,11 @@ function withDefault(
       .map((chunk) => (chunk && "value" in chunk ? String(chunk.value) : ""))
       .join("");
     if (text === "gen_random_uuid()") return mysql.$defaultFn(() => randomUUID());
-    if (text === "now()") return mysql.default(sql`(current_timestamp(3))`);
+    if (text === "now()") {
+      // Set in Node as well, like `$onUpdate`: one clock, so a row can't appear to have
+      // changed before it was made when the server's clock runs ahead.
+      return mysql.default(sql`(current_timestamp(3))`).$defaultFn(() => new Date());
+    }
     throw new Error(`${tableName}.${column.name} has a default MySQL can't use: ${text}.`);
   }
   if (column.columnType === "PgJsonb" || column.columnType === "PgArray") {
