@@ -5,7 +5,7 @@
  */
 export const updatesStrings = {
   "settings.systemHeader": "{product} itself",
-  "settings.updatesDescription": "New versions of {product} and your plugins",
+  "settings.updatesDescription": "New versions of {product} and your add-ons",
   "settings.aboutDescription": "Which version this is, and where to find help",
 
   "updates.title": "Updates",
@@ -139,7 +139,7 @@ export const updatesStrings = {
   "updates.sidebarLinkSecurity": "{count} updates, including a security fix",
 
   "dashboard.updates.title": "Updates",
-  "dashboard.updates.description": "New versions of {product} and your plugins",
+  "dashboard.updates.description": "New versions of {product} and your add-ons",
   "dashboard.updates.upToDate": "{product} {version} is up to date.",
   "dashboard.updates.checkFailed": "Couldn’t check for updates",
   "dashboard.updates.summarySecurity": "{available} · {security}",
