@@ -22,6 +22,7 @@ import { Page } from "../design/Page.js";
 import { useInstalledApps } from "../apps/InstalledAppsContext.js";
 import { useAdminPlugins } from "../plugins/AdminPluginsContext.js";
 import type { WidgetSize } from "../plugins/adminPlugin.js";
+import { RetentionChoiceNotice } from "../privacy/RetentionChoiceNotice.js";
 import { useCan, useSession } from "../session/SessionContext.js";
 import { type AvailableWidget, availableWidgets } from "./availableWidgets.js";
 import {
@@ -122,6 +123,7 @@ export function DashboardPage() {
 
   return (
     <Page width="wide">
+      <RetentionChoiceNotice />
       <LargeTitle
         title={t("dashboard.title")}
         subtitle={t(isEditing ? "dashboard.editSubtitle" : "dashboard.subtitle")}

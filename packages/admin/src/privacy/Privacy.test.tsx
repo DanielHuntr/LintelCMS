@@ -6,6 +6,7 @@ import { renderScreen } from "../testing/renderScreen.js";
 import { PersonalDataMapPage } from "./PersonalDataMapPage.js";
 import { PolicyHelperPage } from "./PolicyHelperPage.js";
 import { PrivacyPage } from "./PrivacyPage.js";
+import { RetentionChoiceNotice } from "./RetentionChoiceNotice.js";
 import type { PersonSearch, RetentionRule } from "./privacy.api.js";
 import { ProcessorsPage } from "./ProcessorsPage.js";
 import { describeLength, RetentionPage } from "./RetentionPage.js";
@@ -159,6 +160,46 @@ describe("Settings → Privacy", () => {
         selected: [{ kindId: "shop-customers", id: "c2" }],
       }),
     );
+  });
+
+  it("says the rules wait for a choice after an upgrade, and lets the owner keep them off", async () => {
+    const rule = {
+      id: "activityLogs",
+      enabled: false,
+      days: 90,
+      choices: [30, 90],
+      applies: true,
+      dueNow: 0,
+      nextDueAt: null,
+    };
+    const { calls } = mockApi(({ method, url }) => {
+      if (url.pathname === "/privacy/requests") return { requests: [] };
+      if (url.pathname === "/privacy/retention") {
+        return { rules: [rule], needsChoice: method === "GET" };
+      }
+      throw new Error(`Unexpected request: ${url.pathname}`);
+    });
+    renderScreen(<RetentionPage />, { permissions: ["privacy:manage"] });
+
+    expect(await screen.findByText(/nothing has been deleted/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Keep them all off" }));
+
+    await waitFor(() =>
+      expect(
+        calls.find((call) => call.url.pathname === "/privacy/retention" && call.method === "PUT")
+          ?.body,
+      ).toEqual({}),
+    );
+  });
+
+  it("shows the notice on the Privacy screen only to those who can act on it", async () => {
+    mockApi(({ url }) => {
+      if (url.pathname === "/privacy/requests") return { requests: [] };
+      if (url.pathname === "/privacy/retention") return { rules: [], needsChoice: true };
+      throw new Error(`Unexpected request: ${url.pathname}`);
+    });
+    renderScreen(<RetentionChoiceNotice />, { permissions: ["privacy:manage"] });
+    expect(await screen.findByRole("link", { name: "Choose what to keep" })).toBeInTheDocument();
   });
 
   it("maps personal data, and flags add-ons that can't be searched", async () => {

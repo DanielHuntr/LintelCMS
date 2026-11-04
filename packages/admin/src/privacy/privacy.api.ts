@@ -65,6 +65,12 @@ export interface RetentionRule {
   nextDueAt: string | null;
 }
 
+export interface RetentionSettings {
+  rules: RetentionRule[];
+  /** Every rule is off until the owner chooses, because the site was upgraded. */
+  needsChoice: boolean;
+}
+
 export interface Processor {
   id: string;
   name: string;
@@ -139,13 +145,13 @@ export function listPrivacyRequests() {
 }
 
 export function getRetention() {
-  return apiRequest<{ rules: RetentionRule[] }>("/privacy/retention");
+  return apiRequest<RetentionSettings>("/privacy/retention");
 }
 
 export function updateRetention(
   changes: Partial<Record<RetentionRuleId, { enabled: boolean; days: number }>>,
 ) {
-  return apiRequest<{ rules: RetentionRule[] }>("/privacy/retention", {
+  return apiRequest<RetentionSettings>("/privacy/retention", {
     method: "PUT",
     body: changes,
   });

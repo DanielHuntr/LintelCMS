@@ -55,6 +55,11 @@ searched, and erasing says it missed it.
 
 ## Retention defaults
 
+These are for new installs. A site that was already running when the rules arrived keeps
+everything until its owner chooses: migration 0037 saves every rule as off, with
+`retentionNeedsChoice`, and the Privacy screen and Dashboard say so until a choice is saved
+(turning a rule on, or keeping them off). A backup from before the rules restores the same way.
+
 | Rule              | Default        | Why                                                   |
 | ----------------- | -------------- | ----------------------------------------------------- |
 | Form entries      | Off, 12 months | Deleting messages unasked could surprise the owner    |

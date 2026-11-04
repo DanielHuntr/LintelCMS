@@ -77,12 +77,30 @@ export type AddedProcessor = z.output<typeof addedProcessorSchema>;
 export const privacySettingsSchema = z.object({
   retention: retentionRulesSchema.default(defaultRetentionRules),
   processors: z.array(addedProcessorSchema).max(100).default([]),
+  /**
+   * The site was running before these rules existed, so its owner never chose them. Every rule
+   * stays off, and Privacy and the Dashboard say so, until they save a choice.
+   */
+  retentionNeedsChoice: z.boolean().default(false),
 });
 export type PrivacySettings = z.output<typeof privacySettingsSchema>;
 
 export const defaultPrivacySettings: PrivacySettings = {
   retention: { ...defaultRetentionRules },
   processors: [],
+  retentionNeedsChoice: false,
+};
+
+/** For a site whose data predates the rules: an upgrade (migration 0037) or an older backup. */
+export const heldPrivacySettings: PrivacySettings = {
+  retention: {
+    formEntries: { ...defaultRetentionRules.formEntries, enabled: false },
+    abandonedCarts: { ...defaultRetentionRules.abandonedCarts, enabled: false },
+    activityLogs: { ...defaultRetentionRules.activityLogs, enabled: false },
+    orders: { ...defaultRetentionRules.orders, enabled: false },
+  },
+  processors: [],
+  retentionNeedsChoice: true,
 };
 
 /**
@@ -212,6 +230,8 @@ export interface RetentionRuleResponse {
 
 export interface RetentionResponse {
   rules: RetentionRuleResponse[];
+  /** The rules are off until the owner chooses, because the site was upgraded. */
+  needsChoice: boolean;
 }
 
 export interface ProcessorResponse {

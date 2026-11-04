@@ -1,6 +1,7 @@
 import { getTableName } from "drizzle-orm";
 import { checksumOfFiles, ZipArchiveWriter } from "../archives/zip-writer.js";
 import { ZipArchiveReader } from "../archives/zip-reader.js";
+import { heldPrivacySettings } from "../privacy/privacy.schema.js";
 import type { Database, DatabaseKind } from "../database/client.js";
 import { listKnownMigrations } from "../database/migration-status.js";
 import type { StorageDriver } from "../media/storage-driver.js";
@@ -264,7 +265,9 @@ async function replaceDatabase(
     const rows = reader.has(tableFile(name)) ? await reader.readJson(tableFile(name)) : [];
     rowsByTable.set(name, Array.isArray(rows) ? (rows as TableRow[]) : []);
   }
-  const settings = reader.has(SETTINGS_FILE) ? await reader.readJson(SETTINGS_FILE) : {};
+  const settings = withPrivacyChoice(
+    reader.has(SETTINGS_FILE) ? await reader.readJson(SETTINGS_FILE) : {},
+  );
 
   const forwardColumns = columnsPointingForward(tables);
 
@@ -295,4 +298,10 @@ async function replaceDatabase(
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/** A backup from before retention rules: nobody chose them for that data, so they wait. */
+export function withPrivacyChoice(settings: unknown): unknown {
+  if (typeof settings !== "object" || settings === null || "privacy" in settings) return settings;
+  return { ...settings, privacy: heldPrivacySettings };
 }

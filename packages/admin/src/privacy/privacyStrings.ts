@@ -61,6 +61,10 @@ export const privacyStrings = {
   "privacy.map.where": "Stored in",
   "privacy.map.details": "Details",
 
+  "privacy.retention.upgradeNotice":
+    "Your site now has rules for tidying away old personal data. They're off, and nothing has been deleted, until you choose.",
+  "privacy.retention.upgradeLink": "Choose what to keep",
+  "privacy.retention.keepOff": "Keep them all off",
   "privacy.retention.title": "How long data is kept",
   "privacy.retention.subtitle": "Keep personal data only as long as you need it.",
   "privacy.retention.loading": "Loading",
