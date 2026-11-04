@@ -10,6 +10,7 @@ const client = [
   "media:upload",
   "navigation:read",
   "globals:read",
+  "blueprints:read",
 ];
 const editor = [
   "entries:*",

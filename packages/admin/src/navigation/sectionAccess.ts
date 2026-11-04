@@ -15,13 +15,19 @@ const areas: readonly { path: string; anyPermission: readonly Permission[] }[] =
   },
   {
     path: "/build",
-    anyPermission: ["blueprints:read", "settings:read", "branding:update", "content:transfer"],
+    anyPermission: [
+      "blueprints:update",
+      "settings:read",
+      "settings:update",
+      "branding:update",
+      "content:transfer",
+    ],
   },
   {
     path: "/users",
     anyPermission: ["users:read", "roles:update", "security:read", "settings:read"],
   },
-  { path: "/design", anyPermission: ["design:read", "builder:design"] },
+  { path: "/design", anyPermission: ["builder:design"] },
   { path: "/commerce", anyPermission: ["commerce:read", "commerce:read-orders"] },
 ];
 
