@@ -178,6 +178,26 @@ describe("the site's navigation and footer sections", () => {
     expect(chromeOf(await visit("/"))).toMatchObject({ siteNavigation: 1, siteFooter: 1 });
   });
 
+  it("keeps them off a 404 too, until there is a home page (LINTEL-UX-339)", async () => {
+    await putLive(starterSiteSections());
+    const missing = () => site.inject({ method: "GET", url: "/no-such-page" });
+
+    const before = await missing();
+
+    expect(before.statusCode).toBe(404);
+    expect(chromeOf(before.body)).toEqual({
+      automaticHeader: 1,
+      automaticFooter: 1,
+      siteNavigation: 0,
+      siteFooter: 0,
+    });
+
+    await publish("Home", "home");
+    const after = await missing();
+    expect(after.statusCode).toBe(404);
+    expect(chromeOf(after.body)).toMatchObject({ siteNavigation: 1, siteFooter: 1 });
+  });
+
   it("leaves it off a page that hides it, and never doubles a page's own header", async () => {
     await publish("Home", "home");
     await publish("Hidden", "hidden", designed("questions", { hideSiteNavigation: true }));

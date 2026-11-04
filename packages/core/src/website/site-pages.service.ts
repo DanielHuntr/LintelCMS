@@ -353,16 +353,22 @@ function domainCheck(
  * the slug "home", or the newest posts, or a welcome for a new site.
  */
 async function renderHome(request: PageRequest): Promise<SiteResponse> {
+  const home = await findHome(request);
+  return home ? home() : renderMessage(request, { kind: "emptySite" }, 200);
+}
+
+/** How to draw the site's home page, or null when it has nothing to show at "/" yet. */
+async function findHome(request: PageRequest): Promise<(() => Promise<SiteResponse>) | null> {
   const start = request.siteStart;
   const startEntry = start && (await findPublished(request, start.collection.handle, start.slug));
   if (start && startEntry) {
-    return renderEntry(request, start.collection.handle, startEntry);
+    return () => renderEntry(request, start.collection.handle, startEntry);
   }
   for (const collection of request.context.collections) {
     if (collection.routePattern === "/{slug}" || collection.routePattern === "/{path}") {
       const home = await findPublished(request, collection.handle, HOME_SLUG);
       if (home) {
-        return renderEntry(request, collection.handle, home);
+        return () => renderEntry(request, collection.handle, home);
       }
     }
   }
@@ -374,11 +380,11 @@ async function renderHome(request: PageRequest): Promise<SiteResponse> {
         true,
       );
       if (list) {
-        return list;
+        return async () => list;
       }
     }
   }
-  return renderMessage(request, { kind: "emptySite" }, 200);
+  return null;
 }
 
 async function findPublished(
@@ -476,6 +482,7 @@ export async function renderMessage(
   view: SiteView,
   statusCode: number,
   title = view.kind === "message" ? view.title : request.chrome.siteName,
+  automaticChrome = view.kind === "emptySite",
 ): Promise<SiteResponse> {
   return renderWithHead(
     request,
@@ -491,12 +498,13 @@ export async function renderMessage(
       alternates: [],
       noindex: statusCode !== 200,
     },
-    { statusCode, private: statusCode === 401 },
+    { statusCode, private: statusCode === 401, automaticChrome },
   );
 }
 
-function renderNotFound(request: PageRequest): Promise<SiteResponse> {
-  return renderMessage(request, { kind: "notFound" }, 404, "Page not found");
+async function renderNotFound(request: PageRequest): Promise<SiteResponse> {
+  const hasHome = (await findHome(request)) !== null;
+  return renderMessage(request, { kind: "notFound" }, 404, "Page not found", !hasHome);
 }
 
 export async function renderWithHead(
@@ -507,8 +515,14 @@ export async function renderWithHead(
     statusCode?: number;
     private?: boolean;
     translations?: ReadonlyMap<string, string>;
+    /**
+     * A template's navigation and footer go live while its pages are drafts, and they hold its
+     * sample name, so a site with nothing to show yet keeps the automatic ones with its own.
+     */
+    automaticChrome?: boolean;
   } = {},
 ): Promise<SiteResponse> {
+  const { automaticChrome = false, ...page } = options;
   const { dependencies, context, chrome } = request;
   const head = await buildPageHead(
     dependencies.database,
@@ -519,10 +533,8 @@ export async function renderWithHead(
     dependencies.site,
   );
   const now = dependencies.now?.() ?? new Date();
-  // A template's navigation and footer go live while its pages are drafts, and they hold its
-  // sample name, so a site with nothing to show yet keeps the automatic ones with its own.
-  const withSections = view.kind === "emptySite" ? chrome : await withSiteSections(request, chrome);
-  return renderPage(context, withSections, { view, head, path: request.path, ...options }, now);
+  const withSections = automaticChrome ? chrome : await withSiteSections(request, chrome);
+  return renderPage(context, withSections, { view, head, path: request.path, ...page }, now);
 }
 
 /** sitemap.xml and robots.txt come from the SEO plugin, with the site's own addresses. */
