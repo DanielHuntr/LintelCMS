@@ -3,8 +3,8 @@
  * pointers are sent about 15 times a second at most, changes a few times a second.
  */
 export const liveLimits = {
-  /** The most one message may hold. Same as the largest save the API accepts. */
-  maxMessageBytes: 1024 * 1024,
+  /** The most one message may hold. Browsers keep well under it (`maxBatchBytes`). */
+  maxMessageBytes: 2 * 1024 * 1024,
   /** Connections one person may have open: a browser each. */
   maxConnectionsPerPerson: 8,
   maxConnections: 1000,

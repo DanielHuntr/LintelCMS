@@ -1075,3 +1075,16 @@ Found while finishing `feature/shader-studio`. All fixed there; the details are 
 | LINTEL-UX-258, 259, 260, 263 | P2       | Fixed  | Code lost to Escape; unchecked delete; code on the canvas while off; words on still looks |
 | LINTEL-UX-251, 252, 256, 262 | P3       | Fixed  | Opacity couldn't react; Grain setting ignored; repeated checkbox; stale veil              |
 | LINTEL-UX-264 to 269         | P3       | Fixed  | Silk, dust and three tiles redrawn; code box focus                                        |
+
+## Working together (4 November 2026)
+
+Found while building `feature/collaboration`. All fixed there; the details are in
+`FIX-LOG-collaboration.md`.
+
+| ID                 | Severity | Status | Summary                                                                                   |
+| ------------------ | -------- | ------ | ----------------------------------------------------------------------------------------- |
+| LINTEL-UX-368      | P1       | Fixed  | Two saves of different fields at the same moment could lose one                           |
+| LINTEL-UX-369      | P1       | Fixed  | The designer opened a design before entering the page, so it saved the old way            |
+| LINTEL-UX-370, 371 | P2       | Fixed  | A dropped network went unnoticed; one enormous change would have been sent again for ever |
+| LINTEL-UX-372      | P2       | Fixed  | "Couldn't save" showed behind the question when changes clashed                           |
+| LINTEL-UX-373      | P3       | Fixed  | Words typed on the canvas could put back someone else's change to the same words          |

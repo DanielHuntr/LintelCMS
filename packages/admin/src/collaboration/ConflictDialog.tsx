@@ -16,9 +16,10 @@ interface ConflictDialogProps {
   items: readonly ClashItem[];
   onKeepMine: () => void | Promise<void>;
   onUseTheirs: () => void | Promise<void>;
-  /** Closing it decides nothing: the question comes back with the next save. */
-  onClose: () => void;
 }
+
+/** Either answer is safe, and saving is held until there is one, so it can't be waved away. */
+const staysOpen = () => undefined;
 
 /**
  * Two people changed the same thing, so one of them has to choose. It says who and what in
@@ -30,7 +31,6 @@ export function ConflictDialog({
   items,
   onKeepMine,
   onUseTheirs,
-  onClose,
 }: ConflictDialogProps) {
   const [isWorking, setIsWorking] = useState(false);
   const answer = (choose: () => void | Promise<void>) => async () => {
@@ -48,7 +48,7 @@ export function ConflictDialog({
   return (
     <Dialog
       open
-      onClose={onClose}
+      onClose={staysOpen}
       size="alert"
       title={
         personName

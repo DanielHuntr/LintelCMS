@@ -17,3 +17,9 @@ What the builder can do to a page, kept apart from how it looks.
 A command checks that it is allowed, then gives back the change or a plain reason it can't
 happen, which the editor announces. Each one is a single step, so Undo takes it away whole. Hover,
 the screen size being edited and open panels aren't part of the state: undo only changes the page.
+
+## Changes made by someone else
+
+`incomingChanges` brings other people's changes in as a `remote` action (`applyRemote` in
+`editor-state.ts`). They aren't a step in this person's history. They're applied to every page the
+history holds as well, which is what keeps undo each person's own.

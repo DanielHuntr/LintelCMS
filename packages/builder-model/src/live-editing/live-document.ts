@@ -1,6 +1,9 @@
 import type { PageDocument } from "../document/page-document.schema.js";
 import { applyPageChanges, diffPages, type PageChange } from "./page-changes.js";
 
+/** How much one batch may hold. The server takes a little more, for what goes around it. */
+export const maxBatchBytes = 1024 * 1024;
+
 /** Some of this person's steps, sent as one message. */
 export interface ChangeBatch {
   id: string;
@@ -73,13 +76,29 @@ export class LiveDocument {
     return true;
   }
 
-  /** The next batch to send, or null while one is on its way or nothing waits. */
+  /**
+   * The next batch to send, or null while one is on its way or nothing waits. A lot of waiting
+   * steps go a part at a time, so no message goes over what the server takes.
+   */
   nextBatch(): ChangeBatch | null {
     if (this.inFlight || this.waiting.length === 0) return null;
     this.batchCount += 1;
-    this.inFlight = { id: `${this.batchPrefix}-${this.batchCount}`, changes: this.waiting };
-    this.waiting = [];
+    let size = 0;
+    let count = 0;
+    while (count < this.waiting.length) {
+      size += JSON.stringify(this.waiting[count]).length;
+      if (count > 0 && size > maxBatchBytes) break;
+      count += 1;
+    }
+    const changes = this.waiting.slice(0, count);
+    this.inFlight = { id: `${this.batchPrefix}-${this.batchCount}`, changes };
+    this.waiting = this.waiting.slice(count);
     return this.inFlight;
+  }
+
+  /** Whether the batch on its way is one step too big for any message. */
+  get isSendingTooMuch(): boolean {
+    return this.inFlight !== null && JSON.stringify(this.inFlight.changes).length > maxBatchBytes;
   }
 
   /** The server put this person's batch in its order. */

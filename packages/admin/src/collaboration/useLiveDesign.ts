@@ -5,6 +5,7 @@ import {
   type RemoteUpdate,
 } from "@lintel/builder-model";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { t } from "../i18n/strings.js";
 import type { LiveClient } from "./LiveClient.js";
 import { useLiveClient } from "./useLiveClient.js";
 
@@ -85,7 +86,13 @@ export function useLiveDesign(options: LiveDesignOptions): LiveDesign {
   const pump = useCallback(() => {
     if (!client || !live || !isJoinedNow.current) return;
     const batch = live.nextBatch();
-    if (batch) {
+    if (batch && live.isSendingTooMuch) {
+      // One enormous change (a huge paste) can't go this way; it would only be cut off.
+      const { onUpdate, onProblem } = latestOptions.current;
+      const update = live.refused(batch.id);
+      if (update) onUpdate(update, live.hasUnstoredChanges);
+      onProblem(t("collab.tooBig"));
+    } else if (batch) {
       client.send({
         type: "changes",
         entryId,

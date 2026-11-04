@@ -11,7 +11,7 @@ import { requestsAs, startTestServer } from "../testing/test-server.js";
 import { signInAndGetCookies } from "../testing/test-users.js";
 import { liveLimits } from "./live-limits.js";
 import { MessageBudget } from "./message-budget.js";
-import { connectAs, type TestBrowser } from "./test-browser.js";
+import { connectAs, type TestBrowser } from "../testing/test-live-browser.js";
 
 const adminOrigin = "http://localhost:5173";
 

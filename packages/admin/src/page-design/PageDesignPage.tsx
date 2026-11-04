@@ -518,7 +518,6 @@ function PageDesigner({
           )}
           onKeepMine={saving.keepMine}
           onUseTheirs={saving.useTheirs}
-          onClose={saving.putOffConflict}
         />
       )}
       <p role="status" className={saving.mergeNote ? mergeNoteClasses : "sr-only"}>

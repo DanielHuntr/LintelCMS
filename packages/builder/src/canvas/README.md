@@ -39,3 +39,15 @@ same with buttons. `canvas-zoom.ts` holds the steps and the keys.
 | `usePictureDrop.ts`      | Pictures dropped on or pasted into a Picture element  |
 | `PictureDropStatus.tsx`  | The note while a picture uploads, and afterwards      |
 | `animation-preview.ts`   | Plays a selected Lottie or Rive element on the canvas |
+
+## Other people on the page
+
+The builder passes `peers`, and the frame marks each with their selection and pointer, in a layer
+of its own that survives the page being drawn again, so pointers glide. A pointer is a share of an
+element's width and height rather than a place on the screen, because two people rarely have the
+same window, screen size or scroll. The frame reports this person's pointer as `pointer`, about
+20 times a second at most.
+
+Words being typed hold back drawing, as they always have, so someone else's change can't move the
+caret. When typing ends, `editText` says what the words started as, so they merge with whatever
+arrived meanwhile.

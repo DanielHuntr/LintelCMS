@@ -871,6 +871,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
     },
     [
       actions,
+      onPointerChange,
       movingWith,
       selectedIds,
       runShortcut,

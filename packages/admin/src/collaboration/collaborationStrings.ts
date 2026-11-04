@@ -10,6 +10,8 @@ export const collaborationStrings = {
   "collab.reconnecting.more":
     "Your changes are safe on this screen and will be merged when the connection comes back.",
   "collab.editingField": "{name} is editing this",
+  "collab.tooBig":
+    "That change was too big to add while others are on this page. Try adding it in smaller parts.",
   "collab.conflict.title": "{name} changed this while you were working",
   "collab.conflict.titleSomeone": "This changed while you were working",
   "collab.conflict.both": "You both changed:",

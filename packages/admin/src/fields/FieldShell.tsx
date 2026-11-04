@@ -116,6 +116,7 @@ export function FieldShell({
         </legend>
         {helpAbove && helpText}
         {control}
+        <FieldPerson handle={field.handle} />
         {messages}
       </fieldset>
     );
@@ -131,6 +132,7 @@ export function FieldShell({
       </div>
       {helpAbove && helpText}
       {labelling === "label" && control}
+      <FieldPerson handle={field.handle} />
       {messages}
     </div>
   );

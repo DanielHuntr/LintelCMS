@@ -429,7 +429,6 @@ export function EntryEditor({
             items={describeEntryClashes(actions.conflict, blueprint.fields, state.current)}
             onKeepMine={actions.keepMine}
             onUseTheirs={() => actions.useTheirs(state.current)}
-            onClose={actions.putOffConflict}
           />
         )}
 

@@ -1,10 +1,12 @@
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Writable } from "node:stream";
 import { gunzipSync } from "node:zlib";
 import type { FastifyInstance } from "fastify";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import WebSocket from "ws";
 import { ensurePagesCollection } from "../collections/default-collections.js";
 import { forgetAnalyticsTags } from "../analytics/page-tag.js";
 import { LocalDiskStorage } from "../media/local-disk-storage.js";
@@ -70,6 +72,22 @@ describe("the production server", () => {
     const missingApi = await app.inject({ method: "GET", url: "/api/no-such-route" });
     expect(missingApi.statusCode).toBe(404);
     expect(missingApi.headers["content-type"]).toContain("application/json");
+  });
+
+  it("serves the live connection under the API's address", async () => {
+    const app = await start({ publicSite: builtInPublicSite });
+    await app.listen({ port: 0, host: "127.0.0.1" });
+    const { port } = app.server.address() as AddressInfo;
+    const refused = await new Promise<number>((resolve, reject) => {
+      const socket = new WebSocket(`ws://127.0.0.1:${port}/api/live`, {
+        headers: { origin: "https://example.com" },
+      });
+      socket.on("unexpected-response", (_request, response) => resolve(response.statusCode ?? 0));
+      socket.on("open", () => reject(new Error("It opened without a session")));
+      socket.on("error", () => undefined);
+    });
+    // Asking who you are, rather than falling through to the website.
+    expect(refused).toBe(401);
   });
 
   it("counts visitors on the production website too (LINTEL-FUNC-042)", async () => {

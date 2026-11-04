@@ -11,7 +11,7 @@
 | `PageFieldEditor.tsx`    | A second page field in a form: a summary and the **Edit design** link     |
 | `pageDesignRoutes.tsx`   | `/content/:collection/:entryId/design/:field`, full screen                |
 | `PageDesignPage.tsx`     | Loads the entry and opens the builder with the admin's services           |
-| `usePageDesignSaving.ts` | Autosave and Publish through the entries API                              |
+| `usePageDesignSaving.ts` | Live, or autosave through the entries API, and Publish                    |
 | `preloadDesigner.ts`     | Fetches the builder early, so switching to Design doesn't wait for it     |
 
 ## Design first
@@ -77,3 +77,16 @@ The builder gets the site's menus with their links (`useBuilderMenus` in `src/me
 Header, Menu or Menu drawer on the canvas shows the real menu, and its Content tab offers
 "Which menu" and "Edit menu". Edit menu opens `InlineMenuEditor` in the panel: the same
 editing as the Menus screen (add pages, rename, reorder, nest), saved to the same menu.
+
+## Saving with others on the page
+
+`usePageDesignSaving` saves one of two ways, and people never choose:
+
+- **Live**, when the connection is up: each change goes to the server as a step, and the server
+  stores the page (see `collaboration/useLiveDesign.ts`).
+- **Through the API**, when it isn't: as described above. Each save says which version it started
+  from. If someone else saved, their changes are merged with this person's and it saves again; if
+  both changed the same thing it stops and asks (`ConflictDialog`).
+
+Either way, others' changes reach the builder through `incomingChanges`. Versions of an A/B test
+always save through their own API.

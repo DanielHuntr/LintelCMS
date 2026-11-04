@@ -13,7 +13,6 @@ describe("the question when two people changed the same thing", () => {
         items={[{ label: "Title", mine: "Welcome", theirs: "Hello" }]}
         onKeepMine={() => undefined}
         onUseTheirs={() => undefined}
-        onClose={() => undefined}
       />,
     );
     expect(
@@ -34,7 +33,6 @@ describe("the question when two people changed the same thing", () => {
         items={[{ label: "Title" }]}
         onKeepMine={keepMine}
         onUseTheirs={useTheirs}
-        onClose={() => undefined}
       />,
     );
     await userEvent.click(screen.getByRole("button", { name: "Use Sam Lee’s" }));
@@ -50,7 +48,6 @@ describe("the question when two people changed the same thing", () => {
         items={[{ label: "Title" }]}
         onKeepMine={() => undefined}
         onUseTheirs={() => undefined}
-        onClose={() => undefined}
       />,
     );
     expect(

@@ -14,7 +14,7 @@ import { useTestDatabase } from "../testing/test-database.js";
 import { createPersonWithRole } from "../testing/test-people.js";
 import { requestsAs, type SendRequest, startTestServer } from "../testing/test-server.js";
 import { signInAndGetCookies } from "../testing/test-users.js";
-import { connectAs, type TestBrowser } from "./test-browser.js";
+import { connectAs, type TestBrowser } from "../testing/test-live-browser.js";
 
 type Node = PageDocument["root"]["children"][number];
 
@@ -249,7 +249,9 @@ describe("editing a design together", () => {
       },
     ]);
     const refused = await browser.next("changesRefused", (message) => message.batch === batch);
-    expect(refused.code).not.toBe("");
+    expect(refused.message).toMatch(/code/i);
+    await store(browser, "a");
+    expect(JSON.stringify((await stored()).data.design)).not.toContain("sneaky");
   });
 
   it("refuses steps that would leave the page invalid", async () => {

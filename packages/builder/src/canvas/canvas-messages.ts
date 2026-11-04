@@ -212,6 +212,9 @@ const frameMessageTypes = new Set([
 ]);
 
 /** Reads a message from the frame, or null if it isn't one of ours. */
+/** A share of an element's width or height. */
+const isShare = (value: unknown) => isFiniteNumber(value) && value >= 0 && value <= 1;
+
 export function readFrameMessage(data: unknown): MessageFromFrame | null {
   if (typeof data !== "object" || data === null || !("type" in data)) return null;
   const { type } = data as { type: unknown };
@@ -239,7 +242,7 @@ export function readFrameMessage(data: unknown): MessageFromFrame | null {
     case "hover":
       return isOptionalId(message.nodeId) ? (message as MessageFromFrame) : null;
     case "pointer":
-      return isOptionalId(message.nodeId) && isFiniteNumber(message.x) && isFiniteNumber(message.y)
+      return isOptionalId(message.nodeId) && isShare(message.x) && isShare(message.y)
         ? (message as MessageFromFrame)
         : null;
     case "editText":

@@ -105,6 +105,11 @@ export function useEntryActions({
       if (isNew) onCreated(saved);
       return saved;
     } catch (error) {
+      // Nothing went wrong: the person is being asked, and the save goes when they've said.
+      if (error instanceof EntryConflictError) {
+        dispatch({ type: "saveHeld" });
+        throw error;
+      }
       dispatch({
         type: "saveFailed",
         fieldErrors: fieldErrorsFrom(error),
@@ -200,8 +205,6 @@ export function useEntryActions({
     conflict,
     keepMine,
     useTheirs,
-    /** Closes the question for now; the next save asks again. */
-    putOffConflict: () => setConflict(null),
     /** Someone else's save arrived, with nothing to ask about yet. */
     adopt,
     /** Someone else changed a part of the entry this screen doesn't hold. */

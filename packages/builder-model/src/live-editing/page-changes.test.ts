@@ -402,6 +402,27 @@ describe("two people editing one page", () => {
     expect(sam.nextBatch()?.changes).toHaveLength(2);
   });
 
+  it("sends a lot of waiting steps a part at a time", () => {
+    const sam = new LiveDocument(start, "sam");
+    const words = "x".repeat(400 * 1024);
+    for (const id of ["a", "b"]) {
+      sam.edit(renamed(sam.document, id, words));
+    }
+    sam.edit(renamed(sam.document, "h", words));
+    const first = sam.nextBatch();
+    expect(first?.changes).toHaveLength(2);
+    expect(sam.isSendingTooMuch).toBe(false);
+    sam.accepted(first?.id ?? "", 1);
+    expect(sam.nextBatch()?.changes).toHaveLength(1);
+  });
+
+  it("knows when one step is too big to send", () => {
+    const sam = new LiveDocument(start, "sam");
+    sam.edit(renamed(sam.document, "a", "x".repeat(1200 * 1024)));
+    sam.nextBatch();
+    expect(sam.isSendingTooMuch).toBe(true);
+  });
+
   it("takes an edit back when the server refuses it", () => {
     const sam = new LiveDocument(start, "sam");
     sam.edit(renamed(sam.document, "a", "Not allowed"));

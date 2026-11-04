@@ -15,9 +15,11 @@ on without it (see `packages/admin/src/collaboration`).
 | `collaboration-hub.ts`      | Everyone connected, and what each message does             |
 | `live-connection.ts`        | One browser: limits, message order, re-reading permissions |
 | `live-presence.ts`          | Who is on which page                                       |
+| `live-design-rooms.ts`      | The designs open now                                       |
+| `live-design-room.ts`       | One design: puts everyone's steps in one order             |
+| `live-design.service.ts`    | Reading, checking and storing a design                     |
 | `live-limits.ts`            | How much one browser may ask for                           |
 | `message-budget.ts`         | Counts messages and bytes against those limits             |
-| `test-browser.ts`           | A real WebSocket client for tests                          |
 
 The messages are in `packages/builder-model/src/live-editing/live-messages.ts`, shared with
 the admin. Every message is parsed against those schemas before it is read.
@@ -42,3 +44,24 @@ the admin. Every message is parsed against those schemas before it is read.
   person's own tenant. A page out of reach reads the same as one that doesn't exist.
 
 People appear by name and picture. Email addresses aren't sent.
+
+## Editing a design together
+
+A room opens with the first person to open a design and closes with the last. It holds the design
+and applies each person's steps one at a time, so there is one order for everyone (see
+`packages/builder-model/src/live-editing`). Each message goes:
+
+1. `changes` arrives. The person must be on the page, in the room, and able to edit the entry.
+2. The steps are applied to a copy, and the result goes through what a save goes through, with that
+   person's permissions: `validateForCollection`, which holds a client to their designer's rules
+   and keeps code from people who may not add it.
+3. Refused: `changesRefused` with the reason, and nobody else hears a thing.
+4. Accepted: everyone else gets `designChanged`, and the sender `changesAccepted`.
+
+A batch is remembered by its id, so one sent twice around a dropped connection counts once.
+
+**Storing.** The entries table stays the truth. A room stores about a second after the last change,
+at least every five seconds, and before anything reads or replaces the saved design: `PATCH`,
+publishing and restoring all call `storeOpenDesigns` first. A room also stores when its last person
+leaves and when the server stops. Storing doesn't ask what the person may change: each step already
+answered that. A save made some other way comes back through `entryChanged` and is merged in.

@@ -33,6 +33,9 @@ export interface DesignConflict {
 
 const MOST_MERGES = 3;
 
+/** A save that stopped to ask the person which changes to keep. */
+class SaveHeldError extends Error {}
+
 /**
  * Saves a page design like the entry editor saves an entry: shortly after changes stop, one
  * save at a time, through the entries API (so drafts, revisions and publishing work as they
@@ -181,7 +184,7 @@ export function usePageDesignSaving(
           const clashes = findClashes(base, mine, theirChanges);
           if (clashes.length > 0) {
             setConflict({ latest, base, theirs, clashes });
-            throw error;
+            throw new SaveHeldError();
           }
           next = applyPageChanges(theirs, mine);
           takeIn(latest, theirs, next, theirChanges);
@@ -211,8 +214,11 @@ export function usePageDesignSaving(
         setStatus("saved");
         setErrorMessage(null);
       } catch (error) {
-        setStatus("failed");
-        setErrorMessage(fieldMessage(error, fieldHandle) ?? describeError(error));
+        // Nothing went wrong: the person is being asked, and the save goes when they've said.
+        setStatus(error instanceof SaveHeldError ? "idle" : "failed");
+        if (!(error instanceof SaveHeldError)) {
+          setErrorMessage(fieldMessage(error, fieldHandle) ?? describeError(error));
+        }
         throw error;
       }
     },
@@ -292,8 +298,6 @@ export function usePageDesignSaving(
     conflict,
     keepMine,
     useTheirs,
-    /** Closes the question for now; the next save asks again. */
-    putOffConflict: () => setConflict(null),
     /** Says someone's changes were merged with this person's. */
     mergeNote,
     saveNow: () => saveNow().catch(() => undefined),
