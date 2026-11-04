@@ -26,13 +26,15 @@ Yes-or-no settings accept `true`/`false`, `yes`/`no`, `on`/`off` or `1`/`0`.
 | Variable       | Default                     | What it does                                                                         |
 | -------------- | --------------------------- | ------------------------------------------------------------------------------------ |
 | `PUBLIC_URL`   | `http://localhost:<port>`   | The address people visit, such as `https://example.com`, with no path. Used in links |
-| `DATABASE_URL` | none: the built-in database | A Postgres address. Use one on any real server                                       |
+| `DATABASE_URL` | none: the built-in database | A Postgres, MySQL or MariaDB address. Use one on any real server                     |
 | `PORT`         | `API_PORT`, else `4000`     | The port to listen on. Hosting platforms set it for you                              |
 | `HOST`         | `0.0.0.0`                   | The network address to listen on                                                     |
 | `ADMIN_PATH`   | `/admin`                    | Where the admin lives. Can't be `/api`                                               |
 | `NODE_ENV`     | `production`                | `development` runs only the API, for `pnpm dev`. Leave it alone on a server          |
 
-In a Postgres address, write `#`, `@` and `/` in the password as `%23`, `%40` and `%2F`.
+In a database address, write `#`, `@` and `/` in the password as `%23`, `%40` and `%2F`. A
+MySQL or MariaDB address looks like `mysql://user:password@localhost:3306/lintel`, and
+`mariadb://` means the same. Add `?ssl=require` for an encrypted connection.
 
 ## Running behind a proxy
 

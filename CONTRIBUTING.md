@@ -45,9 +45,8 @@ packages/core/src/orders/
 
 ## Database code
 
-Lintel is being made to run on more databases than Postgres, one feature at a time. It can't
-yet; `packages/core/src/database/dialect/README.md` explains the plan. Two things apply to
-everyone meanwhile:
+Lintel runs on Postgres, the built-in database, MySQL and MariaDB, from one set of code;
+`packages/core/src/database/dialect/README.md` explains how. Two things apply to everyone:
 
 - **After changing a `*.table.ts` file**, run `pnpm db:generate:mysql --name <what_changed>`
   in `packages/core` as well as `pnpm db:generate`. It writes to `migrations-mysql` and
@@ -58,8 +57,9 @@ everyone meanwhile:
   `database/dialect` instead: its README has a table of what replaces what. If you remove
   some, run `pnpm dialect:baseline` in `packages/core` so the list shrinks.
 
-`pnpm test:dialects` (MySQL and MariaDB) and `pnpm test:postgres` (a real Postgres server)
-need Docker and run on request. Ordinary `pnpm test` needs neither.
+`pnpm test:mysql` (the whole core suite on MySQL 8.4 and MariaDB 11.4), `pnpm test:dialects`
+(the `*.dialects.test.ts` files on both) and `pnpm test:postgres` (a real Postgres server) need
+Docker and run on request. Ordinary `pnpm test` needs none of them.
 
 ## Before you open a pull request
 

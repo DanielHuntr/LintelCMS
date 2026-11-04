@@ -6,7 +6,8 @@ Which database Lintel uses, how it is opened, and what happens when it can't be 
 
 On start, the first of these that is set wins:
 
-1. `DATABASE_URL`: a Postgres server named in the environment or the root `.env`.
+1. `DATABASE_URL`: a Postgres, MySQL or MariaDB server named in the environment or the root
+   `.env`.
 2. `.lintel/config.json`: the database picked on the setup screen in the browser.
 3. The built-in database: PGlite (Postgres compiled to WebAssembly), stored in
    `.lintel/data`. Nothing to install, so `pnpm install && pnpm dev` just works.
@@ -50,5 +51,5 @@ how to %-encode `#`, `@` and `/`). The server, the scripts and the setup screen 
 | `schema.ts`            | Every table, gathered from the feature folders                  |
 | `columns.ts`           | Columns most tables share (`id`, `tenantId`, timestamps)        |
 
-`dialect/` is the start of support for other databases. It changes nothing for Postgres;
-see its README.
+`dialect/` is what lets Lintel run on MySQL and MariaDB. It changes nothing for Postgres; see
+its README.

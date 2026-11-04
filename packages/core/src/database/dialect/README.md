@@ -1,9 +1,8 @@
 # Database dialects
 
-The one place that knows Lintel can run on more than one kind of database. Postgres (the
-built-in database and a Postgres server) is what Lintel runs on. **MySQL and MariaDB are
-being added one feature at a time, and nobody can run Lintel on them yet**: the server only
-opens Postgres. The plan and the current state are in
+The one place that knows Lintel can run on more than one kind of database: Postgres (the
+built-in database and a Postgres server), MySQL 8.4 and MariaDB 11.4. `pnpm test:mysql` runs
+the whole core suite on the last two. The history and the state of it are in
 `docs/decisions/0049-any-database.md`.
 
 Nothing here changes Postgres. Every helper gives the same query Lintel ran before, and the
@@ -20,7 +19,8 @@ default it doesn't know.
 
 `pnpm db:generate:mysql --name <what_changed>` writes the migration to `migrations-mysql`.
 `pnpm test:dialects` fails if you forget. Run it after `pnpm db:generate` whenever a table
-changes. A plugin's tables aren't included: plugins are Postgres-only for now.
+changes. A plugin's tables aren't included: a plugin brings its own MySQL migrations, or stays
+off there (see "Running on MySQL and MariaDB" in the plugin docs).
 
 ## How a repository moves over
 
@@ -57,6 +57,16 @@ export async function listSiteFontRows(database: DatabaseOrTransaction, tenantId
 | `count(*) filter (where ...)`            | `countWhere`                                        |
 | `selectDistinctOn`, newest of each group | `selectNewestPerGroup` (in `reads.ts`)              |
 | `sum(...) filter (where ...)`            | `sumWhere`                                          |
+| `branch->'entries'->0->>'siteId'`        | `jsonTextAt`                                        |
+| `jsonb_exists`, `jsonb_typeof`           | `jsonHasKey`, `jsonIsObject`                        |
+| `jsonb_set`, moving a key                | `jsonWithKey`, `jsonWithKeyRenamed`                 |
+| `jsonb_build_object` of some keys        | `jsonOnlyKeys`                                      |
+| `jsonb_each_text`, a whole value         | `jsonObjectHoldsText`                               |
+| `array_position`                         | `positionInList`                                    |
+| full-text search                         | `textSearch`                                        |
+| `pg_advisory_xact_lock`                  | `holdLockUntilTransactionEnds`                      |
+| `for update of table`                    | `.for("update", lockOnly(database, table))`         |
+| `database.execute` and reading its rows  | `readRawRows`                                       |
 | `nulls last`                             | `orderNullsLast`                                    |
 | `to_char(... at time zone 'UTC', ...)`   | `utcDay`                                            |
 | `... - make_interval(days => ...)`       | `daysBefore`                                        |
@@ -87,6 +97,18 @@ Handled here:
   it's told the write can't clash with it.
 - **JSON arrives as text** and is parsed by the column, because MariaDB's json is longtext.
 
+- **Each statement sees what's committed.** Connections use read committed, as Postgres does.
+- **A transaction MySQL undoes to break a deadlock is tried again,** up to four times. It can
+  run more than once, so do anything that leaves the database, such as sending an email,
+  after it.
+- **Keys in JSON are written in one order,** the one jsonb uses, so MariaDB, whose json is
+  text, can compare two values with `<>`.
+- **`dashboard_layouts_one_owner` isn't there.** MySQL refuses a check on columns with `on
+delete` rules. The repository writes either a person or a role, never both.
+- **A value too long for a key** is refused with a plain 422 rather than an error.
+- **Times in one transaction differ.** Postgres's `now()` is the same all through a
+  transaction, and Node sets each row's time on MySQL. Don't rely on two rows matching.
+
 To remember when moving a query:
 
 - Ascending order puts nulls first on MySQL and last on Postgres. Use `orderNullsLast`
@@ -95,16 +117,21 @@ To remember when moving a query:
   and JSON as text. Use `.mapWith(column)` or `.mapWith(Boolean)`.
 - MySQL can't read from a table in a subquery of a `delete` or `update` on that table, or
   use `limit` inside an `in (...)` subquery.
+- `exists` over `json_table` finds nothing when it's the only condition on a join: count instead.
 
 ## Files
 
-| File                  | What it does                                                 |
-| --------------------- | ------------------------------------------------------------ |
-| `database-dialect.ts` | Which dialect a database speaks, and what it can do          |
-| `mysql-tables.ts`     | Working out MySQL tables; `tableFor`                         |
-| `writes.ts`           | `returning`, upserts and insert-if-new on each database      |
-| `reads.ts`            | The newest row of each group                                 |
-| `expressions.ts`      | JSON, lists, case, counting, ordering and date maths         |
-| `database-errors.ts`  | How each database reports a broken unique key                |
-| `mysql-database.ts`   | Opening MySQL and MariaDB (only the dialect tests do so far) |
-| `mysql-schema.cjs`    | Every table in MySQL's form, for drizzle-kit                 |
+| File                  | What it does                                               |
+| --------------------- | ---------------------------------------------------------- |
+| `database-dialect.ts` | Which dialect a database speaks, and what it can do        |
+| `mysql-tables.ts`     | Working out MySQL tables; `tableFor`                       |
+| `writes.ts`           | `returning`, upserts and insert-if-new on each database    |
+| `reads.ts`            | The newest row of each group                               |
+| `expressions.ts`      | JSON, lists, case, counting, ordering and date maths       |
+| `database-errors.ts`  | How each database reports a broken unique key              |
+| `json-expressions.ts` | Looking inside JSON, changing it and building it           |
+| `text-search.ts`      | Searching text and JSON for words                          |
+| `locks.ts`            | A lock that ends with the transaction                      |
+| `raw-queries.ts`      | Rows from `execute`, and what differs in catalogue queries |
+| `mysql-database.ts`   | Opening MySQL and MariaDB                                  |
+| `mysql-schema.cjs`    | Every table in MySQL's form, for drizzle-kit               |

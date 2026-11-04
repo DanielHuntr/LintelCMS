@@ -7,17 +7,17 @@ since: "0.1"
 An **add-on** is a plugin packaged on its own: an npm package (or a folder) that a site
 installs with one command, without touching Lintel's source. It can add any of:
 
-| Part                             | In the add-on                       | Example                                             |
-| -------------------------------- | ----------------------------------- | --------------------------------------------------- |
-| Field types, with an editor      | `fieldtypes`, admin `fieldEditors`  | A colour swatch picked from a palette               |
-| Liquid tags and filters          | `liquid`                            | `{% example_opening_hours %}`                       |
-| Builder elements                 | `blocks`                            | A "Colour swatch" card in Insert                    |
-| Dashboard widgets and screens    | admin `dashboardWidgets`, `screens` | "Open today 9:00–17:00"                             |
-| Settings, with a form            | `settings`                          | The opening hours                                   |
-| Things done when content changes | `events`                            | Log a form sent on a closed day                     |
-| Work done on a timer             | `jobs`                              | A daily check                                       |
-| Terminal commands                | `commands`                          | `lintel example:hours`                              |
-| API routes and tables            | `routes`, `database`                | See [Writing a plugin](/building/writing-a-plugin/) |
+| Part                             | In the add-on                       | Example                                                                                                                                                 |
+| -------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Field types, with an editor      | `fieldtypes`, admin `fieldEditors`  | A colour swatch picked from a palette                                                                                                                   |
+| Liquid tags and filters          | `liquid`                            | `{% example_opening_hours %}`                                                                                                                           |
+| Builder elements                 | `blocks`                            | A "Colour swatch" card in Insert                                                                                                                        |
+| Dashboard widgets and screens    | admin `dashboardWidgets`, `screens` | "Open today 9:00–17:00"                                                                                                                                 |
+| Settings, with a form            | `settings`                          | The opening hours                                                                                                                                       |
+| Things done when content changes | `events`                            | Log a form sent on a closed day                                                                                                                         |
+| Work done on a timer             | `jobs`                              | A daily check                                                                                                                                           |
+| Terminal commands                | `commands`                          | `lintel example:hours`                                                                                                                                  |
+| API routes and tables            | `routes`, `database`                | See [Writing a plugin](/building/writing-a-plugin/), and [Running on MySQL](/building/writing-a-plugin/#running-on-mysql-and-mariadb) if it has tables, |
 
 An add-on runs inside Lintel with full access, and sites list it in **Build → Add-ons**. To
 connect a service from its own server instead, with only the access a site owner approves,

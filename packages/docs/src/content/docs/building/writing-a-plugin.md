@@ -98,6 +98,54 @@ pnpm --filter @lintel/plugin-example-bookings db:generate --name create_bookings
 Lintel applies a plugin's migrations every time the server starts, and records them
 apart from its own, so you never run them by hand.
 
+### Running on MySQL and MariaDB
+
+A plugin with no tables of its own runs on every database with nothing to do. A plugin with
+tables is written for Postgres, and stays switched off on MySQL and MariaDB until it says
+otherwise: `PUT /plugins` refuses it, its routes answer as if it were off, and the list of
+plugins gives it `canRunHere: false`. To run there it needs three things:
+
+1. **Migrations for MySQL.** Your tables stay as they are. `mysqlTableFor` works out each
+   one's MySQL form, so give drizzle-kit those in a second schema file, with a second config
+   that says `dialect: "mysql"` and `out: "./migrations-mysql"`:
+
+   ```js
+   // src/server/mysql-schema.cjs
+   const { mysqlTableFor } = require("@lintel/core/plugin");
+   const { bookingsTable } = require("./bookings.table.ts");
+
+   module.exports = { bookingsTable: mysqlTableFor(bookingsTable) };
+   ```
+
+   Then name that folder as well:
+
+   ```ts
+   database: {
+     tables: [bookingsTable],
+     migrationsFolder: join(packageFolder(import.meta.url), "migrations"),
+     mysqlMigrationsFolder: join(packageFolder(import.meta.url), "migrations-mysql"),
+   },
+   ```
+
+2. **Each table through `tableFor`.** Do this at the top of every repository function:
+
+   ```ts
+   import { tableFor } from "@lintel/core/plugin";
+
+   const bookings = tableFor(database, bookingsTable);
+   ```
+
+3. **Nothing only Postgres has.** MySQL has no `returning`, `onConflictDoUpdate`, `ilike`,
+   `->>` or `::` casts. `@lintel/core/plugin` exports what replaces them: `insertReturning`,
+   `updateReturning`, `deleteReturning`, `upsert`, `insertIfNew`, `likeIgnoringCase`,
+   `jsonText`, `jsonListIncludes`, `countWhere` and `orderNullsLast`.
+
+Then run your tests on MySQL, because none of this is checked for you: naming a MySQL folder
+is your promise that the plugin works there. `pnpm test:mysql` covers Lintel's own code only.
+
+Built-in features need none of this. The bookings example and the Newsletter and Instagram
+add-ons haven't made this move, so they stay off on MySQL and MariaDB.
+
 ## 3. Write the routes
 
 Routes follow Lintel's three layers: the route parses the request and checks permission,

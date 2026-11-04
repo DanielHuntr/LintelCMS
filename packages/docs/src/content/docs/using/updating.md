@@ -91,9 +91,9 @@ start` in a release folder). It keeps each version in `versions/`, and `current`
   folder, shared by every version.
 - **The built-in database** is copied into `versions/database-copies/` at each update, while
   the site is paused. Three copies are kept, each the size of the database.
-- **On your own Postgres server**, an update that changes the database isn't done with the
-  button: Lintel can't keep an exact copy of a Postgres database to go back to. The screen
-  says so. Back up the database with your provider's tools, then update by hand (see
+- **On your own Postgres, MySQL or MariaDB server**, an update that changes the database
+  isn't done with the button: Lintel can't keep an exact copy of a database server to go back
+  to. The screen says so. Back up the database with your provider's tools, then update by hand (see
   [Keeping Lintel updated](/hosting/updating/)). Updates that don't change the database work
   with the button as usual.
 - **If Lintel stops part-way through an update** (a crash or a power cut), it finishes or
