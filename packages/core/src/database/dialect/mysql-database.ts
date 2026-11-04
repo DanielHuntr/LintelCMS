@@ -57,14 +57,11 @@ const EXACT_COLLATIONS: Record<MysqlEngine, string> = {
 };
 
 /**
- * For text a query works out rather than reads from a column. MySQL's JSON functions give
- * utf8mb4_bin and refuse to compare it with utf8mb4_0900_bin, so its connections use that.
- * Columns still win a comparison, so this doesn't loosen their exactness.
+ * For text a query works out rather than reads from a column. The JSON functions of both
+ * MySQL and MariaDB give utf8mb4_bin and refuse to compare it with anything else, so
+ * connections use that. Columns still win a comparison, so this doesn't loosen their exactness.
  */
-const CONNECTION_COLLATIONS: Record<MysqlEngine, string> = {
-  mysql: "utf8mb4_bin",
-  mariadb: "utf8mb4_nopad_bin",
-};
+const CONNECTION_COLLATION = "utf8mb4_bin";
 
 export class WrongDatabaseCollationError extends Error {
   constructor(databaseName: string, found: string, needed: string) {
@@ -236,9 +233,7 @@ export async function openMysqlDatabase(
   });
   pool.on("connection", (connection) => {
     // Sent first on each connection, so everything after it sees these.
-    connection.query(
-      `set time_zone = '+00:00', names utf8mb4 collate ${CONNECTION_COLLATIONS[engine]}`,
-    );
+    connection.query(`set time_zone = '+00:00', names utf8mb4 collate ${CONNECTION_COLLATION}`);
     // What Postgres does: each statement sees what is committed, so a read after waiting for
     // a lock sees the other writer's work. It also takes fewer locks, so deadlocks are rarer.
     connection.query("set session transaction isolation level read committed");

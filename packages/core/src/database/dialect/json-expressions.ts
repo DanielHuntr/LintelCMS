@@ -198,7 +198,7 @@ export function childTitlesInBranch(
       parent_id varchar(36) collate utf8mb4_bin path '$.parentId',
       title longtext collate utf8mb4_bin path '$.data.title'
     )) as child
-    where child.parent_id = ${parentId}
+    where child.parent_id = ${parentId} collate utf8mb4_bin
   )`.mapWith((text: string | null) =>
     text === null ? null : (JSON.parse(text) as string[]).slice(0, limit),
   );
