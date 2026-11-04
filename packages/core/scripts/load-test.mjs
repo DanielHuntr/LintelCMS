@@ -282,6 +282,7 @@ const rows = results.flatMap(({ engine, views, saves, publishes, deadlocks }) =>
     deadlocks,
   })),
 );
+// eslint-disable-next-line no-console -- the numbers are what this script is for.
 console.table(rows);
 if (process.env.LINTEL_LOAD_REPORT) {
   writeFileSync(process.env.LINTEL_LOAD_REPORT, `${JSON.stringify(results, null, 2)}\n`);

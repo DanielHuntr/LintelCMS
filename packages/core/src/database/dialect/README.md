@@ -9,6 +9,9 @@ built-in database and a Postgres server), MySQL 8.0.16 or newer and MariaDB 10.1
 Nothing here changes Postgres. Every helper gives the same query Lintel ran before, and the
 `*.table.ts` files and `migrations` folder are not touched.
 
+`pnpm test:load` runs many page views and saves against a real server on Postgres, MySQL and
+MariaDB, on request. Build first.
+
 ## How a table reaches MySQL
 
 The `pnpm` commands here are run in `packages/core`.
