@@ -1,6 +1,12 @@
 import { and, asc, count, eq, sql } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../database/client.js";
-import { type NewSiteFontRow, type SiteFontRow, siteFontsTable } from "./site-fonts.table.js";
+import {
+  type NewSiteFontRow,
+  type SiteFontRow,
+  siteFontsTable as siteFontsDefinition,
+} from "./site-fonts.table.js";
+import { insertReturning, updateReturning } from "../database/dialect/writes.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /** Database reads and writes for site fonts, nothing else. */
 
@@ -9,6 +15,7 @@ export async function listSiteFontRows(
   tenantId: string,
   siteId: string,
 ): Promise<SiteFontRow[]> {
+  const siteFontsTable = tableFor(database, siteFontsDefinition);
   return database
     .select()
     .from(siteFontsTable)
@@ -21,6 +28,7 @@ export async function listAllSiteFontRows(
   database: DatabaseOrTransaction,
   tenantId: string,
 ): Promise<SiteFontRow[]> {
+  const siteFontsTable = tableFor(database, siteFontsDefinition);
   return database.select().from(siteFontsTable).where(eq(siteFontsTable.tenantId, tenantId));
 }
 
@@ -30,6 +38,7 @@ export async function findSiteFontRow(
   siteId: string,
   fontId: string,
 ): Promise<SiteFontRow | undefined> {
+  const siteFontsTable = tableFor(database, siteFontsDefinition);
   const [row] = await database
     .select()
     .from(siteFontsTable)
@@ -50,6 +59,7 @@ export async function findSiteFontRowByFamily(
   siteId: string,
   family: string,
 ): Promise<SiteFontRow | undefined> {
+  const siteFontsTable = tableFor(database, siteFontsDefinition);
   const [row] = await database
     .select()
     .from(siteFontsTable)
@@ -70,6 +80,7 @@ export async function countSiteFontRows(
   tenantId: string,
   siteId: string,
 ): Promise<number> {
+  const siteFontsTable = tableFor(database, siteFontsDefinition);
   const [row] = await database
     .select({ total: count() })
     .from(siteFontsTable)
@@ -81,7 +92,8 @@ export async function insertSiteFontRow(
   database: DatabaseOrTransaction,
   row: NewSiteFontRow,
 ): Promise<SiteFontRow> {
-  const [inserted] = await database.insert(siteFontsTable).values(row).returning();
+  const siteFontsTable = tableFor(database, siteFontsDefinition);
+  const [inserted] = await insertReturning(database, siteFontsTable, row);
   if (!inserted) throw new Error("The font could not be saved.");
   return inserted;
 }
@@ -94,11 +106,13 @@ export async function updateSiteFontRow(
     Pick<NewSiteFontRow, "category" | "files" | "licenceConfirmedAt" | "licenceConfirmedBy">
   >,
 ): Promise<SiteFontRow> {
-  const [updated] = await database
-    .update(siteFontsTable)
-    .set(changes)
-    .where(and(eq(siteFontsTable.tenantId, tenantId), eq(siteFontsTable.id, fontId)))
-    .returning();
+  const siteFontsTable = tableFor(database, siteFontsDefinition);
+  const [updated] = await updateReturning(
+    database,
+    siteFontsTable,
+    changes,
+    and(eq(siteFontsTable.tenantId, tenantId), eq(siteFontsTable.id, fontId)),
+  );
   if (!updated) throw new Error("The font could not be saved.");
   return updated;
 }
@@ -108,6 +122,7 @@ export async function deleteSiteFontRow(
   tenantId: string,
   fontId: string,
 ): Promise<void> {
+  const siteFontsTable = tableFor(database, siteFontsDefinition);
   await database
     .delete(siteFontsTable)
     .where(and(eq(siteFontsTable.tenantId, tenantId), eq(siteFontsTable.id, fontId)));
@@ -120,6 +135,7 @@ export async function deleteAdobeProjectRows(
   siteId: string,
   projectId: string,
 ): Promise<void> {
+  const siteFontsTable = tableFor(database, siteFontsDefinition);
   await database
     .delete(siteFontsTable)
     .where(

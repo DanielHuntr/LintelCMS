@@ -3,4 +3,8 @@
  * `*.dialects.test.ts`, in the order they moved. `mysql-ported-repositories.test.ts` holds
  * each of them to it. Add a repository here in the commit that moves it.
  */
-export const mysqlPortedRepositories = [];
+export const mysqlPortedRepositories = [
+  "sites/sites.repository.ts",
+  "sites/locales.repository.ts",
+  "site-fonts/site-fonts.repository.ts",
+];
