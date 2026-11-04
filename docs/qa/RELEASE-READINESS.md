@@ -232,3 +232,11 @@ Branch `fix/night-review` (`FIX-LOG-night-review.md`). The text above is unchang
 
 - Two P1s are fixed: LINTEL-CODE-017 (an add-on's Delete data could empty Lintel's own tables) and LINTEL-CODE-018 (the PHP companion lost delayed payments). Sites published with the companion must add `checkout.session.async_payment_succeeded` to their Stripe webhook.
 - Seven decisions are left for Daniel, listed in the fix log. The one to look at first: finding a person by name treats two people with the same name as one, and erases both.
+
+## Update, 4 November 2026: the review's decisions are built
+
+Branch `fix/night-review` (`FIX-LOG-night-review.md`, LINTEL-CODE-030 to 037). The text above is unchanged.
+
+- All seven decisions are built, along with reaching what published websites keep from Find a person and erase.
+- Sites published with the companion need publishing once more, for the new private files' names and the two privacy actions.
+- An upgraded site now keeps everything until its owner chooses retention rules.

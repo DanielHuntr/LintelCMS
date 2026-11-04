@@ -281,3 +281,11 @@ Windows, Node 24, with PHP 8.1 on the path so the companion's tests ran:
 - plugin-example-bookings 7, addon-newsletter 22, addon-instagram 13: all passed.
 - `pnpm typecheck`: 29 tasks clean. Admin, builder and the other packages' tests weren't run, as nothing in them changed.
 - Migrations 0032 to 0036 on a new database and on one stopped at 0031 with rows in it, on the built-in database only: both ended the same, and `db:generate` reports no changes.
+
+## Decisions from the review (fix/night-review, 2026-11-04)
+
+Windows, Node 24, with PHP 8.1 on the path:
+
+- Core: 249 files, 1,688 passed, 11 skipped, none failed. That run was just before the last small commit, which only underlines a link and drops an unused function; the privacy tests were run again after it (39 passed).
+- Admin privacy, dashboard and publishing 23, plugin-example-bookings 7: all passed. `pnpm typecheck`: 29 tasks clean. The rest of the admin, the builder and the CLI were not run; only READMEs changed in the builder and the CLI.
+- Migrations 0032 to 0037 on a new database and on one stopped at 0031 with rows in it, built-in database only: both ended with the same tables, the older one holds its retention rules and the new one doesn't, and `db:generate` reports no changes.
