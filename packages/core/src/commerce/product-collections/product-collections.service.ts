@@ -145,6 +145,7 @@ export async function findCollectionProducts(
     {
       status,
       extraCondition: collectionRulesCondition(
+        database,
         collection.rules,
         collection.matchAll,
         primaryCurrency ?? null,

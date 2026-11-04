@@ -1,25 +1,35 @@
 import { and, count, desc, eq, isNull, lt, or } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../../database/client.js";
 import { DEFAULT_TENANT_ID } from "../../database/columns.js";
-import { type CustomerRow, customersTable } from "../customers/customers.table.js";
+import {
+  type CustomerRow,
+  customersTable as customersDefinition,
+} from "../customers/customers.table.js";
 import {
   type ArchivedOrderRow,
-  archivedOrdersTable,
+  archivedOrdersTable as archivedOrdersDefinition,
   type NewArchivedOrderRow,
   type ShopifyImportRow,
-  shopifyImportsTable,
+  shopifyImportsTable as shopifyImportsDefinition,
 } from "./shopify-import.table.js";
+import {
+  insertIfNewReturning,
+  insertReturning,
+  updateReturning,
+} from "../../database/dialect/writes.js";
+import { tableFor } from "../../database/dialect/mysql-tables.js";
 
 /** Database reads and writes for Shopify imports and the archived orders they bring. */
 
 export async function insertImport(
   database: DatabaseOrTransaction,
-  values: Omit<typeof shopifyImportsTable.$inferInsert, "tenantId">,
+  values: Omit<typeof shopifyImportsDefinition.$inferInsert, "tenantId">,
 ): Promise<ShopifyImportRow> {
-  const [row] = await database
-    .insert(shopifyImportsTable)
-    .values({ ...values, tenantId: DEFAULT_TENANT_ID })
-    .returning();
+  const shopifyImportsTable = tableFor(database, shopifyImportsDefinition);
+  const [row] = await insertReturning(database, shopifyImportsTable, {
+    ...values,
+    tenantId: DEFAULT_TENANT_ID,
+  });
   if (!row) throw new Error("Saving the import returned nothing");
   return row;
 }
@@ -28,6 +38,7 @@ export async function findImportRow(
   database: DatabaseOrTransaction,
   importId: string,
 ): Promise<ShopifyImportRow | undefined> {
+  const shopifyImportsTable = tableFor(database, shopifyImportsDefinition);
   const [row] = await database
     .select()
     .from(shopifyImportsTable)
@@ -42,6 +53,7 @@ export async function findImportRow(
 }
 
 export async function listImportRows(database: DatabaseOrTransaction): Promise<ShopifyImportRow[]> {
+  const shopifyImportsTable = tableFor(database, shopifyImportsDefinition);
   return database
     .select()
     .from(shopifyImportsTable)
@@ -53,8 +65,9 @@ export async function listImportRows(database: DatabaseOrTransaction): Promise<S
 export async function updateImportRow(
   database: DatabaseOrTransaction,
   importId: string,
-  changes: Partial<typeof shopifyImportsTable.$inferInsert>,
+  changes: Partial<typeof shopifyImportsDefinition.$inferInsert>,
 ): Promise<void> {
+  const shopifyImportsTable = tableFor(database, shopifyImportsDefinition);
   await database
     .update(shopifyImportsTable)
     .set(changes)
@@ -71,16 +84,16 @@ export async function claimImport(
   now: Date,
   until: Date,
 ): Promise<ShopifyImportRow | undefined> {
-  const [row] = await database
-    .update(shopifyImportsTable)
-    .set({ leaseUntil: until })
-    .where(
-      and(
-        eq(shopifyImportsTable.id, importId),
-        or(isNull(shopifyImportsTable.leaseUntil), lt(shopifyImportsTable.leaseUntil, now)),
-      ),
-    )
-    .returning();
+  const shopifyImportsTable = tableFor(database, shopifyImportsDefinition);
+  const [row] = await updateReturning(
+    database,
+    shopifyImportsTable,
+    { leaseUntil: until },
+    and(
+      eq(shopifyImportsTable.id, importId),
+      or(isNull(shopifyImportsTable.leaseUntil), lt(shopifyImportsTable.leaseUntil, now)),
+    ),
+  );
   return row;
 }
 
@@ -89,11 +102,11 @@ export async function insertCustomerIfNew(
   database: DatabaseOrTransaction,
   customer: Pick<CustomerRow, "email" | "name" | "phone" | "addresses" | "note">,
 ): Promise<CustomerRow | null> {
-  const [row] = await database
-    .insert(customersTable)
-    .values({ ...customer, tenantId: DEFAULT_TENANT_ID })
-    .onConflictDoNothing()
-    .returning();
+  const customersTable = tableFor(database, customersDefinition);
+  const [row] = await insertIfNewReturning(database, customersTable, {
+    ...customer,
+    tenantId: DEFAULT_TENANT_ID,
+  });
   return row ?? null;
 }
 
@@ -101,6 +114,7 @@ export async function findCustomerIdByEmail(
   database: DatabaseOrTransaction,
   email: string,
 ): Promise<string | null> {
+  const customersTable = tableFor(database, customersDefinition);
   const [row] = await database
     .select({ id: customersTable.id })
     .from(customersTable)
@@ -114,11 +128,14 @@ export async function insertArchivedOrderIfNew(
   database: DatabaseOrTransaction,
   order: Omit<NewArchivedOrderRow, "tenantId">,
 ): Promise<boolean> {
-  const inserted = await database
-    .insert(archivedOrdersTable)
-    .values({ ...order, tenantId: DEFAULT_TENANT_ID })
-    .onConflictDoNothing()
-    .returning({ id: archivedOrdersTable.id });
+  const archivedOrdersTable = tableFor(database, archivedOrdersDefinition);
+  const inserted = await insertIfNewReturning(
+    database,
+    archivedOrdersTable,
+    { ...order, tenantId: DEFAULT_TENANT_ID },
+    {},
+    { id: archivedOrdersTable.id },
+  );
   return inserted.length > 0;
 }
 
@@ -126,6 +143,7 @@ export async function archivedOrderExists(
   database: DatabaseOrTransaction,
   name: string,
 ): Promise<boolean> {
+  const archivedOrdersTable = tableFor(database, archivedOrdersDefinition);
   const [row] = await database
     .select({ id: archivedOrdersTable.id })
     .from(archivedOrdersTable)
@@ -145,6 +163,7 @@ export async function listArchivedOrderRows(
   filter: { customerId?: string },
   page: { page: number; perPage: number },
 ): Promise<{ rows: ArchivedOrderRow[]; total: number }> {
+  const archivedOrdersTable = tableFor(database, archivedOrdersDefinition);
   const where = and(
     eq(archivedOrdersTable.tenantId, DEFAULT_TENANT_ID),
     filter.customerId ? eq(archivedOrdersTable.customerId, filter.customerId) : undefined,
