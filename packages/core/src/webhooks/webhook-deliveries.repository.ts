@@ -2,11 +2,13 @@ import { and, asc, desc, eq, lte, sql } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import {
   type NewWebhookDeliveryRow,
-  webhookDeliveriesTable,
+  webhookDeliveriesTable as webhookDeliveriesDefinition,
   type WebhookDeliveryRow,
   type WebhookRow,
-  webhooksTable,
+  webhooksTable as webhooksDefinition,
 } from "./webhooks.table.js";
+import { insertReturning, updateReturning } from "../database/dialect/writes.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /** Database reads and writes for the delivery log. */
 
@@ -14,10 +16,11 @@ export async function insertWebhookDeliveries(
   database: DatabaseOrTransaction,
   deliveries: NewWebhookDeliveryRow[],
 ): Promise<WebhookDeliveryRow[]> {
+  const webhookDeliveriesTable = tableFor(database, webhookDeliveriesDefinition);
   if (deliveries.length === 0) {
     return [];
   }
-  return database.insert(webhookDeliveriesTable).values(deliveries).returning();
+  return insertReturning(database, webhookDeliveriesTable, deliveries);
 }
 
 export async function listDeliveryRows(
@@ -26,6 +29,7 @@ export async function listDeliveryRows(
   webhookId: string,
   page: { limit: number; offset: number },
 ): Promise<{ rows: WebhookDeliveryRow[]; total: number }> {
+  const webhookDeliveriesTable = tableFor(database, webhookDeliveriesDefinition);
   const where = and(
     eq(webhookDeliveriesTable.tenantId, tenantId),
     eq(webhookDeliveriesTable.webhookId, webhookId),
@@ -50,6 +54,7 @@ export async function findDeliveryRow(
   webhookId: string,
   deliveryId: string,
 ): Promise<WebhookDeliveryRow | undefined> {
+  const webhookDeliveriesTable = tableFor(database, webhookDeliveriesDefinition);
   const [delivery] = await database
     .select()
     .from(webhookDeliveriesTable)
@@ -69,6 +74,7 @@ export async function findDueDeliveryIds(
   now: Date,
   limit: number,
 ): Promise<string[]> {
+  const webhookDeliveriesTable = tableFor(database, webhookDeliveriesDefinition);
   const rows = await database
     .select({ id: webhookDeliveriesTable.id })
     .from(webhookDeliveriesTable)
@@ -94,21 +100,22 @@ export async function claimDueDelivery(
   now: Date,
   leaseUntil: Date,
 ): Promise<{ delivery: WebhookDeliveryRow; webhook: WebhookRow } | undefined> {
-  const [delivery] = await database
-    .update(webhookDeliveriesTable)
-    .set({
+  const webhookDeliveriesTable = tableFor(database, webhookDeliveriesDefinition);
+  const webhooksTable = tableFor(database, webhooksDefinition);
+  const [delivery] = await updateReturning(
+    database,
+    webhookDeliveriesTable,
+    {
       nextAttemptAt: leaseUntil,
       attemptCount: sql`${webhookDeliveriesTable.attemptCount} + 1`,
       lastAttemptAt: now,
-    })
-    .where(
-      and(
-        eq(webhookDeliveriesTable.id, deliveryId),
-        eq(webhookDeliveriesTable.status, "pending"),
-        lte(webhookDeliveriesTable.nextAttemptAt, now),
-      ),
-    )
-    .returning();
+    },
+    and(
+      eq(webhookDeliveriesTable.id, deliveryId),
+      eq(webhookDeliveriesTable.status, "pending"),
+      lte(webhookDeliveriesTable.nextAttemptAt, now),
+    ),
+  );
   if (!delivery) {
     return undefined;
   }
@@ -128,6 +135,7 @@ export async function recordDeliveryAttempt(
     "status" | "nextAttemptAt" | "responseStatus" | "responseSummary"
   >,
 ): Promise<void> {
+  const webhookDeliveriesTable = tableFor(database, webhookDeliveriesDefinition);
   await database
     .update(webhookDeliveriesTable)
     .set(outcome)

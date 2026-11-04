@@ -26,4 +26,6 @@ export const mysqlPortedRepositories = [
   "globals/global-sets.repository.ts",
   "globals/global-values.repository.ts",
   "dashboard/dashboard.repository.ts",
+  "webhooks/webhooks.repository.ts",
+  "webhooks/webhook-deliveries.repository.ts",
 ];

@@ -257,15 +257,6 @@
   "users/authorship.repository.ts": {
     "returning": 1
   },
-  "webhooks/webhook-deliveries.repository.ts": {
-    "returning": 2
-  },
-  "webhooks/webhooks.repository.ts": {
-    "cast with ::": 1,
-    "distinct on": 1,
-    "json containment": 1,
-    "returning": 2
-  },
   "wordpress-import/wordpress-import.repository.ts": {
     "cast with ::": 1,
     "returning": 3,
