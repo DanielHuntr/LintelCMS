@@ -11,6 +11,7 @@
 | `PageFieldEditor.tsx`    | A second page field in a form: a summary and the **Edit design** link     |
 | `pageDesignRoutes.tsx`   | `/content/:collection/:entryId/design/:field`, full screen                |
 | `PageDesignPage.tsx`     | Loads the entry and opens the builder with the admin's services           |
+| `DesignerWhenWide.tsx`   | The note for narrow windows; a designer already open stays open, hidden   |
 | `usePageDesignSaving.ts` | Autosave and Publish through the entries API                              |
 | `preloadDesigner.ts`     | Fetches the builder early, so switching to Design doesn't wait for it     |
 

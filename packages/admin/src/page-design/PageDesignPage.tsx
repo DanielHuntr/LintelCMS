@@ -36,6 +36,7 @@ import { ViewPageLink } from "../content/ViewPageLink.js";
 import { ConfirmDialog } from "../design/ConfirmDialog.js";
 import { buttonClasses } from "../design/Button.js";
 import { useIsNarrowScreen } from "../design/useIsNarrowScreen.js";
+import { DesignerWhenWide } from "./DesignerWhenWide.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
 import { Skeleton } from "../design/Skeleton.js";
 import { type StringKey, t } from "../i18n/strings.js";
@@ -317,174 +318,175 @@ function PageDesigner({
     );
   // The canvas, panels and toolbar need a laptop's width; on a phone it spilled off the
   // screen, so say so and offer what works there (LINTEL-UX-013).
-  if (isNarrowScreen)
-    return (
-      <main className="flex min-h-dvh flex-col items-center justify-center gap-3 p-6 text-center">
-        <span className="mb-1 flex size-16 items-center justify-center rounded-full bg-fill text-label-secondary">
-          <MonitorSmartphone aria-hidden="true" strokeWidth={1.5} className="size-7" />
-        </span>
-        <h1 className="text-title text-label">{t("pageDesign.narrow.title")}</h1>
-        <p className="max-w-md text-body text-balance text-label-secondary">
-          {t("pageDesign.narrow.description")}
-        </p>
-        <div className="mt-2 flex flex-wrap justify-center gap-2">
-          {viewPage && (
-            <ViewPageLink target={viewPage} className={buttonClasses("filled", "medium")}>
-              <SquareArrowOutUpRight aria-hidden="true" className="size-4" />
-              {t("editor.viewPage")}
-            </ViewPageLink>
-          )}
-          <Link
-            to="/content/$collection/$entryId"
-            params={{ collection: collectionHandle, entryId: saving.entry.id }}
-            search={{ locale: undefined }}
-            className={buttonClasses("tinted", "medium")}
-          >
-            {t("pageDesign.back", { title })}
-          </Link>
-        </div>
-      </main>
-    );
+  const narrowNote = (
+    <main className="flex min-h-dvh flex-col items-center justify-center gap-3 p-6 text-center">
+      <span className="mb-1 flex size-16 items-center justify-center rounded-full bg-fill text-label-secondary">
+        <MonitorSmartphone aria-hidden="true" strokeWidth={1.5} className="size-7" />
+      </span>
+      <h1 className="text-title text-label">{t("pageDesign.narrow.title")}</h1>
+      <p className="max-w-md text-body text-balance text-label-secondary">
+        {t("pageDesign.narrow.description")}
+      </p>
+      <div className="mt-2 flex flex-wrap justify-center gap-2">
+        {viewPage && (
+          <ViewPageLink target={viewPage} className={buttonClasses("filled", "medium")}>
+            <SquareArrowOutUpRight aria-hidden="true" className="size-4" />
+            {t("editor.viewPage")}
+          </ViewPageLink>
+        )}
+        <Link
+          to="/content/$collection/$entryId"
+          params={{ collection: collectionHandle, entryId: saving.entry.id }}
+          search={{ locale: undefined }}
+          className={buttonClasses("tinted", "medium")}
+        >
+          {t("pageDesign.back", { title })}
+        </Link>
+      </div>
+    </main>
+  );
 
   return (
-    <ShaderLibraryContext value={shaderLibrary}>
-      <PageBuilder
-        key={experiments.editing}
-        initialDocument={experiments.initialDocument ?? opened.document}
-        onChange={changeDesign}
-        onSelectionChange={experiments.select}
-        title={title}
-        toolbarTitleNote={
-          <PageStatus
-            entry={saving.entry}
-            state={pageStateOf(saving.entry, saving.hasUnsavedChanges)}
-            note={showsSitePartsNote ? t("pageDesign.siteSections.notLive") : undefined}
-          />
-        }
-        finishEditingRef={finishEditing}
-        toolbarAfterTitle={
-          <PageViewSwitch
-            pageTitle={title}
-            views={views}
-            view="design"
-            canDesign={!contentOnly}
-            onChange={(view) => void viewSwitch.request(view)}
-          />
-        }
-        canEditCode={canEditCode}
-        contentOnly={contentOnly}
-        site={site}
-        dataSources={dataSources}
-        menuEditor={renderMenuEditor}
-        blocks={blocks}
-        enabledPlugins={session.enabledPlugins}
-        themeStylesheet={themeStylesheet(defaultTheme)}
-        baseStylesheet={siteStylesheet}
-        text={text}
-        motionText={motionText}
-        pickImage={imagePicker.pick}
-        pickPage={pagePicker.pick}
-        findPage={findPage}
-        uploadFile={uploadToMediaLibrary}
-        onAddFont={fonts.onAddFont}
-        onMoveFontToSite={fonts.onMoveFontToSite}
-        uploadPicture={uploadPictureToMediaLibrary}
-        sampleModelsUrl={`${apiUrl}/media/sample-models`}
-        onSaveNow={experiments.isEditingVersion ? experiments.saveNow : saving.saveNow}
-        frameScripts={canvasFrameScripts}
-        effectModules={effectModules}
-        siteEffects={siteMotion}
-        siteDesign={siteDesign.source}
-        siteSections={siteSections}
-        pageDrafting={pageDrafting}
-        toolbarStart={
-          <Link
-            to="/content/$collection/$entryId"
-            params={{ collection: collectionHandle, entryId: saving.entry.id }}
-            search={{ locale: undefined }}
-            aria-label={t("pageDesign.back", { title })}
-            className="flex size-8 shrink-0 items-center justify-center rounded-control text-accent hover:bg-fill focus-visible:focus-ring"
+    <DesignerWhenWide isNarrowScreen={isNarrowScreen} note={narrowNote}>
+      <ShaderLibraryContext value={shaderLibrary}>
+        <PageBuilder
+          key={experiments.editing}
+          initialDocument={experiments.initialDocument ?? opened.document}
+          onChange={changeDesign}
+          onSelectionChange={experiments.select}
+          title={title}
+          toolbarTitleNote={
+            <PageStatus
+              entry={saving.entry}
+              state={pageStateOf(saving.entry, saving.hasUnsavedChanges)}
+              note={showsSitePartsNote ? t("pageDesign.siteSections.notLive") : undefined}
+            />
+          }
+          finishEditingRef={finishEditing}
+          toolbarAfterTitle={
+            <PageViewSwitch
+              pageTitle={title}
+              views={views}
+              view="design"
+              canDesign={!contentOnly}
+              onChange={(view) => void viewSwitch.request(view)}
+            />
+          }
+          canEditCode={canEditCode}
+          contentOnly={contentOnly}
+          site={site}
+          dataSources={dataSources}
+          menuEditor={renderMenuEditor}
+          blocks={blocks}
+          enabledPlugins={session.enabledPlugins}
+          themeStylesheet={themeStylesheet(defaultTheme)}
+          baseStylesheet={siteStylesheet}
+          text={text}
+          motionText={motionText}
+          pickImage={imagePicker.pick}
+          pickPage={pagePicker.pick}
+          findPage={findPage}
+          uploadFile={uploadToMediaLibrary}
+          onAddFont={fonts.onAddFont}
+          onMoveFontToSite={fonts.onMoveFontToSite}
+          uploadPicture={uploadPictureToMediaLibrary}
+          sampleModelsUrl={`${apiUrl}/media/sample-models`}
+          onSaveNow={experiments.isEditingVersion ? experiments.saveNow : saving.saveNow}
+          frameScripts={canvasFrameScripts}
+          effectModules={effectModules}
+          siteEffects={siteMotion}
+          siteDesign={siteDesign.source}
+          siteSections={siteSections}
+          pageDrafting={pageDrafting}
+          toolbarStart={
+            <Link
+              to="/content/$collection/$entryId"
+              params={{ collection: collectionHandle, entryId: saving.entry.id }}
+              search={{ locale: undefined }}
+              aria-label={t("pageDesign.back", { title })}
+              className="flex size-8 shrink-0 items-center justify-center rounded-control text-accent hover:bg-fill focus-visible:focus-ring"
+            >
+              <ChevronLeft aria-hidden="true" className="size-5" />
+            </Link>
+          }
+          toolbarEnd={
+            <div className="ms-2 flex items-center gap-3" data-tour="publish">
+              {experiments.switcher}
+              {experiments.isEditingVersion ? (
+                experiments.saveState
+              ) : (
+                <>
+                  <SaveIndicator
+                    status={saving.status}
+                    hasUnsavedChanges={saving.hasUnsavedChanges}
+                    errorMessage={saving.errorMessage}
+                    onRetry={saving.saveNow}
+                  />
+                  <BuilderVisitorsLine entryId={saving.entry.id} />
+                  <span role="status" className="sr-only">
+                    {saving.justPublished ? t("pageDesign.publishedAnnouncement") : ""}
+                  </span>
+                  {viewPage && <PageViewLink target={viewPage} />}
+                  <PagePreviewButton onClick={() => void openPreview()} />
+                  {canPublish && mustSendForReview && reviewState.data && (
+                    <SendForReviewButton
+                      entryId={saving.entry.id}
+                      state={reviewState.data}
+                      beforeSending={saving.saveNow}
+                      look="toolbar"
+                    />
+                  )}
+                  {canPublish && !mustSendForReview && (
+                    <PagePublishButton
+                      state={publishState({
+                        isLive: saving.entry.status === "published",
+                        hasNewerChanges: saving.liveness !== "live" || showsSitePartsNote,
+                        isPublishing: saving.isPublishing,
+                        justPublished: saving.justPublished,
+                      })}
+                      onPublish={() => void saving.publish()}
+                    />
+                  )}
+                </>
+              )}
+            </div>
+          }
+        />
+        {saving.status === "failed" && saving.errorMessage && (
+          <p
+            role="alert"
+            className="fixed bottom-4 left-1/2 z-40 max-w-xl -translate-x-1/2 rounded-card bg-surface-raised px-4 py-3 text-footnote text-danger shadow-float"
           >
-            <ChevronLeft aria-hidden="true" className="size-5" />
-          </Link>
-        }
-        toolbarEnd={
-          <div className="ms-2 flex items-center gap-3" data-tour="publish">
-            {experiments.switcher}
-            {experiments.isEditingVersion ? (
-              experiments.saveState
-            ) : (
-              <>
-                <SaveIndicator
-                  status={saving.status}
-                  hasUnsavedChanges={saving.hasUnsavedChanges}
-                  errorMessage={saving.errorMessage}
-                  onRetry={saving.saveNow}
-                />
-                <BuilderVisitorsLine entryId={saving.entry.id} />
-                <span role="status" className="sr-only">
-                  {saving.justPublished ? t("pageDesign.publishedAnnouncement") : ""}
-                </span>
-                {viewPage && <PageViewLink target={viewPage} />}
-                <PagePreviewButton onClick={() => void openPreview()} />
-                {canPublish && mustSendForReview && reviewState.data && (
-                  <SendForReviewButton
-                    entryId={saving.entry.id}
-                    state={reviewState.data}
-                    beforeSending={saving.saveNow}
-                    look="toolbar"
-                  />
-                )}
-                {canPublish && !mustSendForReview && (
-                  <PagePublishButton
-                    state={publishState({
-                      isLive: saving.entry.status === "published",
-                      hasNewerChanges: saving.liveness !== "live" || showsSitePartsNote,
-                      isPublishing: saving.isPublishing,
-                      justPublished: saving.justPublished,
-                    })}
-                    onPublish={() => void saving.publish()}
-                  />
-                )}
-              </>
-            )}
-          </div>
-        }
-      />
-      {saving.status === "failed" && saving.errorMessage && (
-        <p
-          role="alert"
-          className="fixed bottom-4 left-1/2 z-40 max-w-xl -translate-x-1/2 rounded-card bg-surface-raised px-4 py-3 text-footnote text-danger shadow-float"
-        >
-          {saving.errorMessage}
-        </p>
-      )}
-      <SentBackNote
-        state={reviewState.data}
-        className="fixed bottom-4 left-4 z-30 max-w-md shadow-float"
-      />
-      {experiments.dialogs}
-      <SitePartProblems
-        problems={[
-          showsSwitchProblem ? { message: t("pageHome.switch.notSaved") } : null,
-          siteDesign.problem,
-          shared.problem,
-        ]}
-      />
-      {imagePicker.dialog}
-      {fonts.dialogs}
-      {pagePicker.dialog}
-      <ConfirmDialog
-        open={leave.isAsking}
-        title={t("editor.leaveTitle")}
-        message={t("editor.leaveMessage")}
-        confirmLabel={t("editor.leave")}
-        cancelLabel={t("editor.stay")}
-        isDestructive
-        onConfirm={leave.leave}
-        onCancel={leave.stay}
-      />
-    </ShaderLibraryContext>
+            {saving.errorMessage}
+          </p>
+        )}
+        <SentBackNote
+          state={reviewState.data}
+          className="fixed bottom-4 left-4 z-30 max-w-md shadow-float"
+        />
+        {experiments.dialogs}
+        <SitePartProblems
+          problems={[
+            showsSwitchProblem ? { message: t("pageHome.switch.notSaved") } : null,
+            siteDesign.problem,
+            shared.problem,
+          ]}
+        />
+        {imagePicker.dialog}
+        {fonts.dialogs}
+        {pagePicker.dialog}
+        <ConfirmDialog
+          open={leave.isAsking}
+          title={t("editor.leaveTitle")}
+          message={t("editor.leaveMessage")}
+          confirmLabel={t("editor.leave")}
+          cancelLabel={t("editor.stay")}
+          isDestructive
+          onConfirm={leave.leave}
+          onCancel={leave.stay}
+        />
+      </ShaderLibraryContext>
+    </DesignerWhenWide>
   );
 }
 

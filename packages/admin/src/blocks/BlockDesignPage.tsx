@@ -31,6 +31,7 @@ import { ConfirmDialog } from "../design/ConfirmDialog.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
 import { Skeleton } from "../design/Skeleton.js";
 import { useIsNarrowScreen } from "../design/useIsNarrowScreen.js";
+import { DesignerWhenWide } from "../page-design/DesignerWhenWide.js";
 import type { Field } from "../fields/field.types.js";
 import { type StringKey, t } from "../i18n/strings.js";
 import {
@@ -183,126 +184,127 @@ function BlockDesigner({ block, site }: { block: SiteBlock; site: CanvasSite | u
 
   const title = t("blocks.designTitle", { name: block.name });
   // The canvas, panels and toolbar need a laptop's width, as page designs do (LINTEL-UX-013).
-  if (isNarrowScreen)
-    return (
-      <main className="flex min-h-dvh flex-col items-center justify-center gap-3 p-6 text-center">
-        <span className="mb-1 flex size-16 items-center justify-center rounded-full bg-fill text-label-secondary">
-          <MonitorSmartphone aria-hidden="true" strokeWidth={1.5} className="size-7" />
-        </span>
-        <h1 className="text-title text-label">{t("pageDesign.narrow.title")}</h1>
-        <p className="max-w-md text-body text-balance text-label-secondary">
-          {t("blocks.narrowDescription")}
-        </p>
-        <Link
-          to="/design/blocks/$handle"
-          params={{ handle: block.handle }}
-          className={classNames("mt-2", buttonClasses("tinted", "medium"))}
-        >
-          {t("blocks.designBack", { name: block.name })}
-        </Link>
-      </main>
-    );
+  const narrowNote = (
+    <main className="flex min-h-dvh flex-col items-center justify-center gap-3 p-6 text-center">
+      <span className="mb-1 flex size-16 items-center justify-center rounded-full bg-fill text-label-secondary">
+        <MonitorSmartphone aria-hidden="true" strokeWidth={1.5} className="size-7" />
+      </span>
+      <h1 className="text-title text-label">{t("pageDesign.narrow.title")}</h1>
+      <p className="max-w-md text-body text-balance text-label-secondary">
+        {t("blocks.narrowDescription")}
+      </p>
+      <Link
+        to="/design/blocks/$handle"
+        params={{ handle: block.handle }}
+        className={classNames("mt-2", buttonClasses("tinted", "medium"))}
+      >
+        {t("blocks.designBack", { name: block.name })}
+      </Link>
+    </main>
+  );
   return (
-    <ShaderLibraryContext value={shaderLibrary}>
-      <PageBuilder
-        key={shownKey}
-        initialDocument={initial}
-        onChange={(next) => {
-          const edited = designOf(next, block.name);
-          if (!edited) return;
-          setKept((current) =>
-            recordVariantEdit(current.design, current.variants, selection, edited),
-          );
-          setStatus("unsaved");
-        }}
-        title={title}
-        canEditCode={canEditCode}
-        site={site}
-        blocks={{ library: [], canManage: false }}
-        blockMaster={master}
-        siteDesign={siteDesign.source}
-        enabledPlugins={session.enabledPlugins}
-        themeStylesheet={themeStylesheet(defaultTheme)}
-        baseStylesheet={siteStylesheet}
-        text={text}
-        motionText={motionText}
-        pickImage={imagePicker.pick}
-        uploadFile={uploadToMediaLibrary}
-        onAddFont={fonts.onAddFont}
-        onMoveFontToSite={fonts.onMoveFontToSite}
-        onSaveNow={() => void save()}
-        frameScripts={canvasFrameScripts}
-        effectModules={effectModules}
-        toolbarStart={
-          <Link
-            to="/design/blocks/$handle"
-            params={{ handle: block.handle }}
-            aria-label={t("blocks.designBack", { name: block.name })}
-            className="flex size-8 shrink-0 items-center justify-center rounded-control text-accent hover:bg-fill focus-visible:focus-ring"
+    <DesignerWhenWide isNarrowScreen={isNarrowScreen} note={narrowNote}>
+      <ShaderLibraryContext value={shaderLibrary}>
+        <PageBuilder
+          key={shownKey}
+          initialDocument={initial}
+          onChange={(next) => {
+            const edited = designOf(next, block.name);
+            if (!edited) return;
+            setKept((current) =>
+              recordVariantEdit(current.design, current.variants, selection, edited),
+            );
+            setStatus("unsaved");
+          }}
+          title={title}
+          canEditCode={canEditCode}
+          site={site}
+          blocks={{ library: [], canManage: false }}
+          blockMaster={master}
+          siteDesign={siteDesign.source}
+          enabledPlugins={session.enabledPlugins}
+          themeStylesheet={themeStylesheet(defaultTheme)}
+          baseStylesheet={siteStylesheet}
+          text={text}
+          motionText={motionText}
+          pickImage={imagePicker.pick}
+          uploadFile={uploadToMediaLibrary}
+          onAddFont={fonts.onAddFont}
+          onMoveFontToSite={fonts.onMoveFontToSite}
+          onSaveNow={() => void save()}
+          frameScripts={canvasFrameScripts}
+          effectModules={effectModules}
+          toolbarStart={
+            <Link
+              to="/design/blocks/$handle"
+              params={{ handle: block.handle }}
+              aria-label={t("blocks.designBack", { name: block.name })}
+              className="flex size-8 shrink-0 items-center justify-center rounded-control text-accent hover:bg-fill focus-visible:focus-ring"
+            >
+              <ChevronLeft aria-hidden="true" className="size-5" />
+            </Link>
+          }
+          toolbarEnd={
+            <div className="ms-2 flex items-center gap-3">
+              <span role="status" className="text-footnote text-label-secondary">
+                {status === "saved"
+                  ? t("blocks.designSaved")
+                  : status === "saving"
+                    ? t("blocks.saving")
+                    : t("blocks.designUnsaved")}
+              </span>
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={() => void save()}
+                  disabled={status === "saving" || status === "saved"}
+                  className="h-8 rounded-control bg-accent-fill px-3 text-footnote font-semibold text-on-accent focus-visible:focus-ring disabled:opacity-50"
+                >
+                  {t("blocks.designSave")}
+                </button>
+              )}
+            </div>
+          }
+        />
+        {problem && (
+          <p
+            role="alert"
+            className="fixed bottom-4 left-1/2 z-40 max-w-xl -translate-x-1/2 rounded-card bg-surface-raised px-4 py-3 text-footnote text-danger shadow-float"
           >
-            <ChevronLeft aria-hidden="true" className="size-5" />
-          </Link>
-        }
-        toolbarEnd={
-          <div className="ms-2 flex items-center gap-3">
-            <span role="status" className="text-footnote text-label-secondary">
-              {status === "saved"
-                ? t("blocks.designSaved")
-                : status === "saving"
-                  ? t("blocks.saving")
-                  : t("blocks.designUnsaved")}
-            </span>
-            {canEdit && (
-              <button
-                type="button"
-                onClick={() => void save()}
-                disabled={status === "saving" || status === "saved"}
-                className="h-8 rounded-control bg-accent-fill px-3 text-footnote font-semibold text-on-accent focus-visible:focus-ring disabled:opacity-50"
-              >
-                {t("blocks.designSave")}
-              </button>
-            )}
-          </div>
-        }
-      />
-      {problem && (
-        <p
-          role="alert"
-          className="fixed bottom-4 left-1/2 z-40 max-w-xl -translate-x-1/2 rounded-card bg-surface-raised px-4 py-3 text-footnote text-danger shadow-float"
-        >
-          {t("blocks.designFailed", { message: problem })}
-        </p>
-      )}
-      <SitePartProblems problems={[siteDesign.problem]} />
-      {imagePicker.dialog}
-      {fonts.dialogs}
-      <ConfirmDialog
-        open={removal !== null}
-        title={t("blocks.removalTitle")}
-        message={t("blocks.removalMessage", {
-          properties: removal?.properties.join(", ") ?? "",
-          pages: removal?.pages.join(", ") ?? "",
-        })}
-        confirmLabel={t("blocks.removalConfirm")}
-        cancelLabel={t("common.cancel")}
-        isDestructive
-        onCancel={() => setRemoval(null)}
-        onConfirm={() => {
-          setRemoval(null);
-          void save(true);
-        }}
-      />
-      <ConfirmDialog
-        open={leave.isAsking}
-        title={t("editor.leaveTitle")}
-        message={t("editor.leaveMessage")}
-        confirmLabel={t("editor.leave")}
-        cancelLabel={t("editor.stay")}
-        isDestructive
-        onConfirm={leave.leave}
-        onCancel={leave.stay}
-      />
-    </ShaderLibraryContext>
+            {t("blocks.designFailed", { message: problem })}
+          </p>
+        )}
+        <SitePartProblems problems={[siteDesign.problem]} />
+        {imagePicker.dialog}
+        {fonts.dialogs}
+        <ConfirmDialog
+          open={removal !== null}
+          title={t("blocks.removalTitle")}
+          message={t("blocks.removalMessage", {
+            properties: removal?.properties.join(", ") ?? "",
+            pages: removal?.pages.join(", ") ?? "",
+          })}
+          confirmLabel={t("blocks.removalConfirm")}
+          cancelLabel={t("common.cancel")}
+          isDestructive
+          onCancel={() => setRemoval(null)}
+          onConfirm={() => {
+            setRemoval(null);
+            void save(true);
+          }}
+        />
+        <ConfirmDialog
+          open={leave.isAsking}
+          title={t("editor.leaveTitle")}
+          message={t("editor.leaveMessage")}
+          confirmLabel={t("editor.leave")}
+          cancelLabel={t("editor.stay")}
+          isDestructive
+          onConfirm={leave.leave}
+          onCancel={leave.stay}
+        />
+      </ShaderLibraryContext>
+    </DesignerWhenWide>
   );
 }
 
