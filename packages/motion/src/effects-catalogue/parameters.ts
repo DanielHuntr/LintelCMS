@@ -50,6 +50,11 @@ export function text(label: string, defaultValue: string, maxLength = 200) {
   } as const satisfies EffectParameter;
 }
 
+/** A setting folded under "More settings". */
+export function more<Parameter extends EffectParameter>(parameter: Parameter) {
+  return { ...parameter, more: true } as const;
+}
+
 /** Settings most effects share. */
 export const common = {
   speed: (defaultValue = 1) => number("Speed", defaultValue, 0.2, 3, { step: 0.1, unit: "×" }),

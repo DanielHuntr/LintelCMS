@@ -30,6 +30,8 @@ export interface DocumentPartsProps {
   elementsScriptUrl?: string;
   siteEffects?: SiteEffectsHead;
   effectModuleUrls?: Readonly<Record<string, string>>;
+  /** The site's own shaders' code, by id; a page carries only the ones it uses. */
+  customShaders?: Readonly<Record<string, string>>;
   /** The cookie notice, on sites that ask visitors about cookies. */
   cookieNotice?: CookieNoticeHead;
 }
@@ -79,6 +81,7 @@ export function renderDocumentParts(props: DocumentPartsProps): DocumentParts {
           design={design}
           siteEffects={props.siteEffects}
           effectModuleUrls={props.effectModuleUrls ?? {}}
+          customShaders={props.customShaders}
           motionScriptUrl={props.motionScriptUrl}
         />
       </>,

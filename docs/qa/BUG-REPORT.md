@@ -1025,3 +1025,16 @@ Fixed on `fix/night-review`; `FIX-LOG-night-review.md` has the commits.
 | LINTEL-CODE-035 | P3       | Fixed  | Companion orders paid with test keys counted as real sales                                                 |
 | LINTEL-CODE-036 | P3       | Fixed  | An app could be sent form entries its installer may not see                                                |
 | LINTEL-CODE-037 | P3       | Fixed  | Five feature folders had no README                                                                         |
+## Shader studio (4 November 2026)
+
+Found while finishing `feature/shader-studio`. All fixed there; the details are in `FIX-LOG-shader-studio.md`.
+
+| ID                           | Severity | Status | Summary                                                                                   |
+| ---------------------------- | -------- | ------ | ----------------------------------------------------------------------------------------- |
+| LINTEL-UX-254                | P1       | Fixed  | Section went blank in the builder after "Add a layer"                                     |
+| LINTEL-UX-257                | P1       | Fixed  | Code box stuck after the graphics card stopped a shader, and retried the same code        |
+| LINTEL-UX-261                | P1       | Fixed  | Custom shader loop checks could be fooled into allowing far more work per pixel           |
+| LINTEL-UX-250, 253, 255      | P2       | Fixed  | Reacting Speed did nothing; own picture hidden; a saved shader didn't show on the canvas  |
+| LINTEL-UX-258, 259, 260, 263 | P2       | Fixed  | Code lost to Escape; unchecked delete; code on the canvas while off; words on still looks |
+| LINTEL-UX-251, 252, 256, 262 | P3       | Fixed  | Opacity couldn't react; Grain setting ignored; repeated checkbox; stale veil              |
+| LINTEL-UX-264 to 269         | P3       | Fixed  | Silk, dust and three tiles redrawn; code box focus                                        |

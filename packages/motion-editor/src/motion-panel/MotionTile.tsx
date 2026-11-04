@@ -92,6 +92,7 @@ function DemoDrawing({ demo }: { demo: MotionDemo }) {
     case "light":
     case "grain":
     case "contours":
+    case "glass":
       return (
         <span className={canvasBox}>
           <span className={`motion-demo-shape motion-demo-${demo} absolute -inset-3 block`} />
@@ -111,9 +112,11 @@ function DemoDrawing({ demo }: { demo: MotionDemo }) {
       );
     case "develop":
       return (
-        <span className="relative block size-5 overflow-hidden rounded-[4px]">
-          <span className="motion-demo-shape block size-5 bg-label" />
-          <span className="motion-demo-extra motion-demo-grain absolute -inset-3 block" />
+        <span className="relative block size-6 overflow-hidden rounded-[4px] bg-label/15">
+          <span className="motion-demo-shape motion-demo-scene absolute inset-0 block" />
+          <span className="motion-demo-extra motion-demo-specks absolute inset-0 block">
+            <span className="motion-demo-scene absolute inset-0 block" />
+          </span>
         </span>
       );
     case "pixels":
@@ -125,7 +128,13 @@ function DemoDrawing({ demo }: { demo: MotionDemo }) {
         </span>
       );
     case "split":
-      return <span className={classNames(shape, "size-5")} />;
+      return (
+        <span className="relative block size-6 overflow-hidden rounded-[4px]">
+          <span className="motion-demo-shape motion-demo-scene motion-demo-red absolute inset-0 block" />
+          <span className="motion-demo-extra motion-demo-scene motion-demo-blue absolute inset-0 block" />
+          <span className="motion-demo-scene absolute inset-0 block" />
+        </span>
+      );
     case "liquid":
       return <span className="motion-demo-shape block size-5 rounded-[6px] bg-label" />;
     case "lens":

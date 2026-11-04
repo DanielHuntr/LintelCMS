@@ -12,11 +12,14 @@ export function EffectsHead({
   design,
   siteEffects,
   effectModuleUrls,
+  customShaders,
   motionScriptUrl,
 }: {
   design: PageDesign | null;
   siteEffects: SiteEffectsHead | undefined;
   effectModuleUrls: Readonly<Record<string, string>>;
+  /** The site's own shaders' code, by id. Only those this page's layers name are written. */
+  customShaders?: Readonly<Record<string, string>>;
   motionScriptUrl: string | undefined;
 }) {
   const bindings = design?.effects ?? [];
@@ -29,6 +32,10 @@ export function EffectsHead({
   ]);
   const modules = Object.fromEntries(
     Object.entries(effectModuleUrls).filter(([name]) => used.has(name)),
+  );
+  const plans = bindings.map((binding) => String(binding.params.plan ?? "")).join("");
+  const shaders = Object.entries(customShaders ?? {}).filter(([id]) =>
+    plans.includes(`"shader":"${id}"`),
   );
   // DesignHead already loads the runtime for pages with animations.
   const runtimeLoaded = (design?.animations.length ?? 0) > 0;
@@ -44,7 +51,12 @@ export function EffectsHead({
             type="application/json"
             id="lintel-effects"
             dangerouslySetInnerHTML={{
-              __html: scriptSafeJson({ modules, bindings, site: siteEffects?.settings }),
+              __html: scriptSafeJson({
+                modules,
+                bindings,
+                site: siteEffects?.settings,
+                ...(shaders.length > 0 ? { shaders: Object.fromEntries(shaders) } : {}),
+              }),
             }}
           />
           {!runtimeLoaded && <script src={motionScriptUrl} defer />}

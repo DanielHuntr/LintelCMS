@@ -51,6 +51,7 @@ export type MotionDemo =
   | "dust"
   | "contours"
   | "grain"
+  | "glass"
   | "develop"
   | "pixels"
   | "split"
@@ -153,6 +154,7 @@ export const elementPicks: Partial<
       { id: "floating-dust", demo: "dust" },
       { id: "contour-lines", demo: "contours" },
       { id: "film-grain", demo: "grain" },
+      { id: "glass", demo: "glass" },
     ],
   },
   hover: {

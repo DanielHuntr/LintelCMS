@@ -67,22 +67,52 @@ A page with a model downloads about 160 kB more, only when the model comes near 
 
 Select a section, choose **Add motion**, then **Always**: the tiles are quiet moving
 backgrounds. **Gradient** drifts two soft colours over the section, **Soft light** is like
-sunlight on the bottom of a pool, **Dust** floats specks through the light (best on a dark
-section), **Contours** draws a map's contour lines, and **Grain** lays film grain over it.
-Each has only a few settings: its colours, its speed and how much. The colours offer your
-site's colours first, so the background changes when Site styles do; dust and lines can be
-**Same as the words**.
+sunlight on the bottom of a pool, **Dust** floats specks through the light, **Contours** draws
+a map's contour lines, **Grain** lays film grain over it, and **Glass** looks through ribbed
+glass. **More effects…** has **Halftone**, **Dithering**, **Aurora**, **Silk** and **Soft
+cells** too.
+
+Each has only a few settings: its colours, its speed and how much. **More settings** has the
+rest, such as size, direction and softness. The colours offer your site's colours first, so
+the background changes when Site styles do; dust and lines can be **Same as the words**.
 
 **Keep words readable** (on by default) checks the colour of the words in the section and,
 only if they would be hard to read over the background, lays a quiet veil just strong
 enough behind them.
+
+### Layers
+
+To stack backgrounds, open one and choose **Add a layer**. It becomes the bottom layer, and you
+can add up to six. The top layer is first in the list, as in a design tool.
+
+- The eye hides a layer.
+- Open a layer for its **Blend** and **Opacity**, its settings, the arrows that move it, and
+  the bin that removes it.
+- **Glass**, **Halftone** and **Dithering** rework the layers under them: put them on top.
+- **Keep words readable** covers the whole stack.
+
+### Making a setting react
+
+The small wave beside a number lets something move it. Choose the pointer, **Scrolling** or
+**A repeating timeline**, then where it **Goes to**. The setting's own slider is where it
+starts. For example, a gradient's **How much colour** can grow as people scroll past.
+
+With less motion nothing moves, and on a touch screen the pointer doesn't either.
+
+### Shaders written for your site
+
+If a developer has written shaders for your site, they're in the **Add a layer** list, with
+controls of their own. See [Custom shaders](/building/custom-shaders/).
+
+### Pictures
 
 For a picture, **Appears** offers **Develop** (it develops out of soft noise as it comes into
 view) and **Pixelate** (it sharpens from big blocks), and **Hover** offers **Liquid**,
 **Colour split** and **Lens**.
 
 Without WebGL, and for people who ask for less motion, sections show a still version and
-pictures show as they are.
+pictures show as they are. If a background can't run for any reason, the section keeps a plain
+background, and its words stay readable.
 
 ## Playful elements
 

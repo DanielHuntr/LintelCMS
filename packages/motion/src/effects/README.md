@@ -26,6 +26,27 @@ lines a picture up the way `object-fit` and `object-position` do. Film grain
 veil that keeps words readable over a background. Ripples and frosted glass still have
 their own small contexts. See `docs/decisions/0057-shader-backgrounds.md`.
 
+### Layers, reactions and custom shaders
+
+`modules/shader-stack` draws a section's background as layers, and any look with a setting
+that reacts to something. It reads a plan from the `plan` setting, made by
+`effects-catalogue/shader-plan.ts`; an effect that needs none of this stays on its own module,
+exactly as it was. See `docs/decisions/0066-shader-studio.md`.
+
+| Path                        | What it does                                                                               |
+| --------------------------- | ------------------------------------------------------------------------------------------ |
+| `kit/shader-looks.ts`       | The four backgrounds' shaders, and what the page needs to know about each                  |
+| `kit/shader-looks-extra.ts` | The looks only the stack runs: glass, halftone, dithering, grain, aurora, silk, soft cells |
+| `kit/shader-stack.ts`       | Draws layers to textures and blends them, in the page's one context                        |
+| `kit/shader-reacts.ts`      | What can drive a number: the pointer, scrolling, a repeating timeline                      |
+| `kit/custom-shader.ts`      | Reads pasted code: limits, controls from comments, plain messages. No browser in it        |
+| `kit/shader-preview.ts`     | The code box's preview, with a context of its own (`@lintel/motion/shader-preview`)        |
+
+A custom shader is not trusted: `readCustomShader` checks it here, in the code box and on the
+server, then it's tried on a tiny drawing and timed while it runs. Whatever stops a layer, the
+rest carry on; with none left, the section keeps its plain background or still look and the
+words are measured against that.
+
 Every behaviour is `(element, params, context) => cleanup`. `context` says whether the
 visitor asked for less motion, is on a low-power device, or has a fine pointer; each
 behaviour answers all three, and also keyboard focus where the pointer matters.

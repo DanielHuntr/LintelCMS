@@ -328,3 +328,15 @@ Windows, Node 24, with PHP 8.1 on the path:
 - Core: 249 files, 1,688 passed, 11 skipped, none failed. That run was just before the last small commit, which only underlines a link and drops an unused function; the privacy tests were run again after it (39 passed).
 - Admin privacy, dashboard and publishing 23, plugin-example-bookings 7: all passed. `pnpm typecheck`: 29 tasks clean. The rest of the admin, the builder and the CLI were not run; only READMEs changed in the builder and the CLI.
 - Migrations 0032 to 0037 on a new database and on one stopped at 0031 with rows in it, built-in database only: both ended with the same tables, the older one holds its retention rules and the new one doesn't, and `db:generate` reports no changes.
+
+## Shader studio (feature/shader-studio, 4 November 2026)
+
+Targeted runs on Windows, not the full suite, which runs at merge:
+
+- Motion: unit 243 passed (27 files). Browser: `shader-studio` 24, `effects-performance` 3, `creative-effects` 11, all passed.
+- Motion editor: 89 passed (10 files), with 17 in `shaders.test.tsx`.
+- Core: `src/custom-shaders` 6 passed. Site components: `src/document` 21 passed. Builder: `src/animate-panel` 13 passed. Admin: `src/page-design` and `src/blocks` 34 passed. Docs: 14 passed.
+- `tsc`: motion editor, builder and core clean. Admin has one error, in `commerce/WaysToPay.test.tsx`, which this branch doesn't touch.
+- Sizes: the core runtime is 9,791 bytes gzipped, under its 10,240 limit.
+
+The browser checks and what they don't cover are in `FIX-LOG-shader-studio.md`.

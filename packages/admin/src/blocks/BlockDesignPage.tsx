@@ -1,3 +1,5 @@
+import { ShaderLibraryContext } from "@lintel/motion-editor";
+import { useShaderLibraryForBuilder } from "../page-design/useShaderLibraryForBuilder.js";
 import { type CanvasSite, PageBuilder } from "@lintel/builder";
 import {
   type BlockProperty,
@@ -79,6 +81,7 @@ function BlockDesigner({ block, site }: { block: SiteBlock; site: CanvasSite | u
   const session = useSession();
   const canEdit = useCan("builder:blocks") && block.editable;
   const canEditCode = useCan("builder:code");
+  const shaderLibrary = useShaderLibraryForBuilder();
   const imagePicker = useImagePicker();
   const fonts = useBuilderFonts();
   const effectModules = useEffectModules(besideTheAdmin);
@@ -200,7 +203,7 @@ function BlockDesigner({ block, site }: { block: SiteBlock; site: CanvasSite | u
       </main>
     );
   return (
-    <>
+    <ShaderLibraryContext value={shaderLibrary}>
       <PageBuilder
         key={shownKey}
         initialDocument={initial}
@@ -299,7 +302,7 @@ function BlockDesigner({ block, site }: { block: SiteBlock; site: CanvasSite | u
         onConfirm={leave.leave}
         onCancel={leave.stay}
       />
-    </>
+    </ShaderLibraryContext>
   );
 }
 

@@ -26,6 +26,8 @@ export type { CursorPicturePicker } from "./effects/SiteMotionSettings.js";
 export { CursorLookFields, themeCursorSwatches } from "./effects/CursorLookFields.js";
 export type { CursorColourSwatch, CursorLookValue } from "./effects/CursorLookFields.js";
 export { MotionPanel } from "./motion-panel/MotionPanel.js";
+export { ShaderLibraryContext } from "./shaders/shader-library.js";
+export type { ShaderInLibrary, ShaderLibrary } from "./shaders/shader-library.js";
 export { SceneElementsContext } from "./trigger/sceneElements.js";
 export type { SceneElement } from "./trigger/sceneElements.js";
 export type { MotionPanelProps, SavedAnimation } from "./motion-panel/MotionPanel.js";

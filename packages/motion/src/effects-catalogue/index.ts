@@ -26,7 +26,7 @@ export type {
   ElementKind,
   StyleEffect,
 } from "./effect-definition.js";
-export { number, choice, colour, toggle, text } from "./parameters.js";
+export { number, choice, colour, toggle, text, more } from "./parameters.js";
 export { standardEffects } from "./catalogue/index.js";
 export {
   dragPlaygroundEffectId,
@@ -40,8 +40,39 @@ export {
 } from "./catalogue/cursor-effects.js";
 export { createEffectRegistry, effectRegistry, registerEffect } from "./effect-registry.js";
 export type { EffectRegistry } from "./effect-registry.js";
-export { nodeEffectSchema, nodeEffectsSchema, maxEffectsPerElement } from "./node-effect.schema.js";
-export type { NodeEffect } from "./node-effect.schema.js";
+export {
+  blendModes,
+  maxEffectsPerElement,
+  maxShaderLayers,
+  nodeEffectSchema,
+  nodeEffectsSchema,
+  reactSources,
+  shaderLayerSchema,
+} from "./node-effect.schema.js";
+export type {
+  BlendMode,
+  NodeEffect,
+  ReactSourceName,
+  SettingReactInput,
+  ShaderLayer,
+} from "./node-effect.schema.js";
+export {
+  customShaderDefinition,
+  customShaderEffectId,
+  effectPlan,
+  isStackable,
+  layeredBackgroundEffectId,
+  layerFromEffect,
+  shaderIdsInPlan,
+  usesStackRuntime,
+  layerOpacityReact,
+} from "./shader-plan.js";
+export {
+  customShaderLimits,
+  explainCompilerLog,
+  readCustomShader,
+} from "../effects/kit/custom-shader.js";
+export type { ReadShader, ShaderControl, ShaderProblem } from "../effects/kit/custom-shader.js";
 export { resolveNodeEffects, effectSelector } from "./resolve-effects.js";
 export type { ResolvedEffects } from "./resolve-effects.js";
 export { measurePageWeight } from "./page-weight.js";

@@ -57,3 +57,12 @@ export function wordColours(element: Element, limit = 40): Rgb[] {
   }
   return colours;
 }
+
+/** The element's own background colour, or the nearest one behind it; white if none is set. */
+export function backgroundBehind(element: HTMLElement): Rgb {
+  for (let at: HTMLElement | null = element; at; at = at.parentElement) {
+    const css = getComputedStyle(at).backgroundColor;
+    if (!/^(transparent|rgba\(.*,\s*0\))$/.test(css)) return resolveColour(at, css, "#ffffff");
+  }
+  return [1, 1, 1];
+}
