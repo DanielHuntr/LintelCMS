@@ -88,6 +88,26 @@ async function measure(database: DatabaseOrTransaction, table: string) {
   }
 }
 
+/**
+ * Tables named under `personalData` alone, with only their personal columns to show. They
+ * are for the details only: Export and Delete data still go by `findOwnTables`.
+ */
+function tablesOnlyInPersonalData(found: Found, described: readonly { name: string }[]) {
+  const personalData = ownPersonalData(found);
+  const known = new Set(described.map((table) => table.name));
+  return (personalData?.tables ?? [])
+    .filter((table) => !known.has(table.name) && !isLintelTable(table.name))
+    .map((table) => ({
+      name: table.name,
+      purpose: "",
+      columns: personalColumnsOf(personalData, table.name).map((name) => ({
+        name,
+        purpose: "",
+        personalData: true,
+      })),
+    }));
+}
+
 /** The tables this add-on keeps data in: those it declares and any others with its name. */
 async function findOwnTables(database: DatabaseOrTransaction, found: Found) {
   const declared = declarationsOf(found.plugin, found.addon).tables.filter(
@@ -141,8 +161,9 @@ export async function describeAddon(
   const own = await findOwnTables(database, found);
   const personalData = ownPersonalData(found);
 
+  const personalOnly = tablesOnlyInPersonalData(found, own.declared);
   const tables = await Promise.all(
-    own.declared.map(async (table) => {
+    [...own.declared, ...personalOnly].map(async (table) => {
       const checked = own.present.has(table.name);
       const columns = checked ? new Set(await listColumnNames(database, table.name)) : new Set();
       return {
@@ -161,8 +182,11 @@ export async function describeAddon(
       };
     }),
   );
+  const named = new Set(personalOnly.map((table) => table.name));
   const undeclared = await Promise.all(
-    own.undeclared.map(async (name) => ({ name, ...(await measure(database, name)) })),
+    own.undeclared
+      .filter((name) => !named.has(name))
+      .map(async (name) => ({ name, ...(await measure(database, name)) })),
   );
 
   const registered = listRegisteredPluginRoutes(plugin.id);

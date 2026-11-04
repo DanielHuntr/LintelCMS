@@ -39,6 +39,9 @@ export default definePlugin({
 const manifest = {
   id: "postcards",
   lintel: ">=1.0.0-rc.1",
+  personalData: {
+    tables: [{ name: "guestbook_signups", columns: [{ name: "email", personalData: true }] }],
+  },
   tables: [
     {
       name: "postcards_sent",
@@ -106,7 +109,10 @@ describe("an add-on's details", () => {
     });
     await api.ready();
     const database = testDatabase.database;
-    await database.execute(sql`drop table if exists postcards_sent, postcards_drafts`);
+    await database.execute(
+      sql`drop table if exists postcards_sent, postcards_drafts, guestbook_signups`,
+    );
+    await database.execute(sql`create table guestbook_signups (id text primary key, email text)`);
     await database.execute(
       sql`create table postcards_sent (id text primary key, sender_email text, message text)`,
     );
@@ -120,6 +126,19 @@ describe("an add-on's details", () => {
 
   afterEach(() => api.close());
   afterAll(() => rm(root, { recursive: true, force: true }));
+
+  it("labels a table named only under personalData as personal", async () => {
+    const details = (await owner("GET", "/addons/postcards/details")).json();
+
+    const table = details.stores.tables.find(
+      (candidate: { name: string }) => candidate.name === "guestbook_signups",
+    );
+    expect(table).toMatchObject({
+      checked: true,
+      columns: [{ name: "email", personalData: true, checked: true }],
+    });
+    expect(details.stores.undeclared).toMatchObject([{ name: "postcards_drafts" }]);
+  });
 
   it("sets what it says it keeps and does against what Lintel finds", async () => {
     const response = await owner("GET", "/addons/postcards/details");

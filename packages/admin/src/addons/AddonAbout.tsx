@@ -120,7 +120,7 @@ function StoresSection({ details }: { details: AddonDetails }) {
               checked={table.checked}
               title={<span className="font-mono text-footnote">{table.name}</span>}
             >
-              <p className="text-footnote text-label">{table.purpose}</p>
+              {table.purpose && <p className="text-footnote text-label">{table.purpose}</p>}
               <p
                 className={`text-caption ${table.checked ? "text-label-secondary" : "text-warning"}`}
               >
