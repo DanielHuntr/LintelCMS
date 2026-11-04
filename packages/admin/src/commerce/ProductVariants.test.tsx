@@ -187,6 +187,22 @@ describe("the variants table", () => {
     expect(priceOf(input, ["S"])).toBe(1000);
   });
 
+  it("says what's wrong at the top, where the save button is (LINTEL-UX-305)", async () => {
+    const api = open(oneOption, {
+      saveError: () =>
+        apiErrorResponse(400, "INVALID_REQUEST", "Some fields need attention", {
+          "variants.0.prices": "Give S a price in GBP before putting the product on sale",
+        }),
+    });
+    await screen.findByLabelText("Price for M");
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() => expect(api.calls.some((call) => call.method === "PUT")).toBe(true));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Give S a price in GBP before putting the product on sale",
+    );
+  });
+
   it("shows the total stock in the footer and keeps it up to date", async () => {
     open(oneOption);
     const footer = (await screen.findByText("Total in stock: 12")).closest("tfoot");
