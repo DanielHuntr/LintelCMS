@@ -3,6 +3,8 @@ import type { FastifyInstance } from "fastify";
 import { findBlueprintByIdOrFail } from "../blueprints/blueprints.service.js";
 import { findCollectionOrFail } from "../collections/collections.service.js";
 import { listDeliveredEntries } from "../delivery/delivery.service.js";
+import type { FormField } from "../forms/form-fields.schema.js";
+import { withRequiredConsent } from "../forms/required-consent.js";
 import { deliverTaxonomy } from "../taxonomies/taxonomies-delivery.service.js";
 import { bindableFieldsOf, choiceLabelsOf, entryAsItem } from "./bound-entries.js";
 import { localiseUrl } from "./site-chrome.service.js";
@@ -119,12 +121,26 @@ export async function readBuilderData(
       .map((item) => choice(item, "title"))
       .filter((item) => item.value),
     sampleProducts: sampleProducts.slice(0, 8),
-    sampleForms: listOf(forms, "items", "forms").flatMap((item) => {
-      const form = readForm(item);
-      // Step dividers split a form into pages; the website's delivery API leaves them out too.
-      return form
-        ? [{ ...form, fields: form.fields.filter((field) => field.type !== "step") }]
-        : [];
-    }),
+    sampleForms: (
+      await Promise.all(
+        listOf(forms, "items", "forms").map((item) => formAsDrawn(dependencies, item)),
+      )
+    ).flatMap((form) => form ?? []),
   };
+}
+
+/** A form as the website draws it, so the canvas shows the same boxes visitors get. */
+async function formAsDrawn(
+  dependencies: SiteDependencies,
+  item: Record<string, unknown>,
+): Promise<DataForm | null> {
+  const form = readForm(item);
+  if (!form) return null;
+  const fields = await withRequiredConsent(dependencies.database, {
+    handle: form.handle,
+    fields: (item.fields ?? []) as FormField[],
+  });
+  const drawn = readForm({ ...item, fields }) ?? form;
+  // Step dividers split a form into pages; the website's delivery API leaves them out too.
+  return { ...drawn, fields: drawn.fields.filter((field) => field.type !== "step") };
 }

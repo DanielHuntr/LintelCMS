@@ -1,3 +1,4 @@
+import { registerPluginFormConsent } from "./required-consent.js";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { eq } from "drizzle-orm";
@@ -411,6 +412,24 @@ describe("forms on websites", () => {
     const types = drawn.fields.map((field: { type: string }) => field.type);
     expect(types).toContain("email");
     expect(types).not.toContain("step");
+  });
+
+  it("gives the page builder a consent box the website adds to a form (LINTEL-UX-285)", async () => {
+    registerPluginFormConsent("forms", async (asked) =>
+      asked.handle === "sign_up_here" ? "Yes, you may email me" : null,
+    );
+    const form = await forms.createForm("Sign up here");
+
+    const response = await forms.api("GET", "/website/builder-data");
+
+    const drawn = response
+      .json()
+      .sampleForms.find((sample: { handle: string }) => sample.handle === form.handle);
+    expect(drawn.fields.at(-1)).toMatchObject({
+      type: "consent",
+      label: "Yes, you may email me",
+      required: true,
+    });
   });
 
   it("works as a plain HTML form, without JavaScript", async () => {
