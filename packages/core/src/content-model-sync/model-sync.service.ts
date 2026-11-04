@@ -125,9 +125,11 @@ export class ContentModelSync {
     }
   }
 
-  stop(): void {
+  /** Waits for a sync that has started, so it can't write after the server has closed. */
+  async stop(): Promise<void> {
     clearTimeout(this.timer);
     this.watcher?.close();
+    await this.running;
   }
 
   /** Syncs shortly, once, however many times it is asked in quick succession. */
