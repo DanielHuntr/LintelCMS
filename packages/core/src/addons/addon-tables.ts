@@ -1,3 +1,4 @@
+import { personalDataDeclarationSchema } from "../privacy/personal-data-declaration.js";
 import { getTableName } from "drizzle-orm";
 import { listSchemaTables } from "../backups/table-order.js";
 import type { LintelPlugin } from "../plugins/plugin-definition.js";
@@ -31,9 +32,19 @@ export function isLintelTable(name: string): boolean {
   return lintelTableNames.has(name);
 }
 
+/** What it says in `personalData`, in its code or its package.json, as Privacy reads it. */
+export function ownPersonalData(
+  plugin: LintelPlugin,
+  addon: Pick<LoadedAddon, "addonPackage"> | undefined,
+) {
+  const parsed = personalDataDeclarationSchema.safeParse(plugin.personalData);
+  return parsed.success ? parsed.data : addon?.addonPackage.manifest.personalData;
+}
+
 /**
  * The tables plugins and add-ons keep their own data in, by name, for backups: those they
- * declare, and those their `database.tables` define. Each once, in the order given.
+ * declare, those they name under `personalData`, and those their `database.tables` define.
+ * Each once, in the order given.
  */
 export function listAddonTableNames(
   plugins: readonly LintelPlugin[],
@@ -42,6 +53,7 @@ export function listAddonTableNames(
   const addons = new Map(loaded.map((addon) => [addon.plugin.id, addon]));
   const names = plugins.flatMap((plugin) => [
     ...declarationsOf(plugin, addons.get(plugin.id)).tables.map((table) => table.name),
+    ...(ownPersonalData(plugin, addons.get(plugin.id))?.tables ?? []).map((table) => table.name),
     ...(plugin.database?.tables ?? []).map((table) => getTableName(table)),
   ]);
   return [...new Set(names)].filter((name) => !isLintelTable(name));

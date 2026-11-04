@@ -94,6 +94,16 @@ describe("backup archives", () => {
     expect(account.avatar?.id).toBe(imageId);
   });
 
+  it("backs up a table an add-on names only under personalData", () => {
+    const plugin = definePlugin({
+      id: "ratings",
+      name: "Ratings",
+      description: "Star ratings.",
+      personalData: { tables: [{ name: "ratings_votes", columns: [] }] },
+    });
+    expect(listAddonTableNames([plugin], [])).toEqual(["ratings_votes"]);
+  });
+
   it("backs up add-ons' own tables, as they declare them, and puts them back", async () => {
     const database = testDatabase.database;
     await database.execute(

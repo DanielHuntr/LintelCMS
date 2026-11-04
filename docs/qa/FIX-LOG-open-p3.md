@@ -152,3 +152,7 @@ Two existing tests had to change, as they listed exactly what is exported and em
 **Left as it was:** backups go by `listAddonTableNames`, which reads `tables` and `database.tables`, so a table named only under `personalData` is exported and emptied but not backed up. As with a declared table, Delete data trusts what an add-on names, so it could name another add-on's table.
 
 **Tests:** core `src/website`, `src/production`, `src/site-sections`, `src/addons` and `postgres-only-code`: 19 files, 140 passed. Admin `src/addons`: 3 files, 18 passed. ESLint and format clean on the changed files; `pnpm typecheck` 29 of 29. In the first of those runs, "are wired up in one place only" in `website-routes.test.ts` failed once (139 passed). The error wasn't captured, and it passed alone, in its folder twice, and in the same run again. The test reads every source file inside the default 5 seconds, and the machine was busy, so a timeout is likely but unproven. It now has 30 seconds. **Browser:** UX-338 and UX-339 at desktop and 390px, light and dark, on the dev servers. Screenshots are `ux338-*` and `ux339-*`. Export and Delete data of these tables: tests only.
+
+## Backups for tables named under personalData
+
+- **LINTEL-UX-340:** a table an add-on named only under `personalData` was exported and emptied but left out of backups. `listAddonTableNames` now includes it, and a test checks it.

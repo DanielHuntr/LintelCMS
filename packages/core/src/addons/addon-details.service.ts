@@ -19,12 +19,9 @@ import { findPluginJobRun } from "../plugins/plugin-jobs.js";
 import { listRegisteredPluginRoutes } from "../plugins/plugin-routes.js";
 import { PluginNotFoundError } from "../plugins/plugins.errors.js";
 import { isPluginEnabled } from "../plugins/plugins.service.js";
-import {
-  personalColumnsOf,
-  personalDataDeclarationSchema,
-} from "../privacy/personal-data-declaration.js";
+import { personalColumnsOf } from "../privacy/personal-data-declaration.js";
 import { deleteSettingValue } from "../settings/settings.repository.js";
-import { declarationsOf, isLintelTable } from "./addon-tables.js";
+import { declarationsOf, isLintelTable, ownPersonalData } from "./addon-tables.js";
 import { csvCell } from "../forms/submissions-csv.js";
 import { AddonStillOnError, AddonTableNotFoundError } from "./addons.errors.js";
 import type { AddonDetails } from "./addons.schema.js";
@@ -46,12 +43,6 @@ function findAddon(catalogue: PluginCatalogue, addons: AddonsState, id: string):
   );
   if (!entry) throw new PluginNotFoundError(id);
   return { plugin: entry.plugin, addon: addons.loaded.find(({ plugin }) => plugin.id === id) };
-}
-
-/** What it says in `personalData`, in its code or its package.json, as Privacy reads it. */
-function ownPersonalData({ plugin, addon }: Found) {
-  const parsed = personalDataDeclarationSchema.safeParse(plugin.personalData);
-  return parsed.success ? parsed.data : addon?.addonPackage.manifest.personalData;
 }
 
 /** Tables are named after the plugin: "gift-cards" owns "gift_cards" and "gift_cards_…". */
@@ -90,7 +81,7 @@ async function measure(database: DatabaseOrTransaction, table: string) {
 
 /** Tables named under `personalData` alone, with only their personal columns to show. */
 function tablesOnlyInPersonalData(found: Found, described: readonly { name: string }[]) {
-  const personalData = ownPersonalData(found);
+  const personalData = ownPersonalData(found.plugin, found.addon);
   const known = new Set(described.map((table) => table.name));
   return (personalData?.tables ?? [])
     .filter((table) => !known.has(table.name))
@@ -160,7 +151,7 @@ export async function describeAddon(
   const { plugin, addon } = found;
   const declarations = declarationsOf(plugin, addon);
   const own = await findOwnTables(database, found);
-  const personalData = ownPersonalData(found);
+  const personalData = ownPersonalData(found.plugin, found.addon);
 
   const tables = await Promise.all(
     own.declared.map(async (table) => {
