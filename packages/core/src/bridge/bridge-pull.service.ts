@@ -56,6 +56,8 @@ const orderSchema = z.object({
   paidAt: z.string(),
   paidAmount: z.number().int(),
   paidCurrency: z.string(),
+  /** False when the provider said test keys paid it. Older orders don't say: they're live. */
+  livemode: z.boolean().nullish(),
   email: z.string(),
   shippingAddress: z.object({
     name: z.string(),
@@ -276,6 +278,7 @@ async function importOrder(
         provider: order.provider,
         paymentIntentId: order.provider === "stripe" ? order.providerPaymentId : null,
         providerPaymentId: order.providerPaymentId,
+        isTest: order.livemode === false,
         amount: order.paidAmount,
         currency: order.paidCurrency,
       },

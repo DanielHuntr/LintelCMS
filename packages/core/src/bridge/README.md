@@ -46,6 +46,9 @@ recorded: a hold stops counting against stock after 35 minutes, and its details 
 days so the order can be made. Stripe's `…async_payment_succeeded` counts as paid too, so add it
 to the webhook's events.
 
+Orders paid with test keys are marked as tests in Orders, from Stripe's `livemode` or Mollie's
+`mode`. When the provider doesn't say, the order counts as a real sale.
+
 Stock and discount codes sync each time Lintel publishes or collects: an order counts
 against the published stock until a catalogue made after Lintel collected it arrives.
 Buy-X-get-Y codes and automatic discounts only work in Lintel's own checkout.

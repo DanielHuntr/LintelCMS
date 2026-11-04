@@ -1085,7 +1085,8 @@ function lintel_stripe_webhook(string $payload, string $header): array
         (string) ($session['payment_intent'] ?? $session['id'] ?? ''),
         (int) ($session['amount_total'] ?? -1),
         strtoupper((string) ($session['currency'] ?? '')),
-        'stripe:' . (string) ($event['id'] ?? '')
+        'stripe:' . (string) ($event['id'] ?? ''),
+        $event['livemode'] ?? $session['livemode'] ?? null
     );
     return ['received' => true, 'order' => $order];
 }
@@ -1105,17 +1106,20 @@ function lintel_mollie_webhook(string $paymentId): array
     $currency = strtoupper((string) ($payment['amount']['currency'] ?? ''));
     $value = (string) ($payment['amount']['value'] ?? '');
     $amount = in_array($currency, LINTEL_ZERO_DECIMAL_CURRENCIES, true) ? (int) $value : (int) round(((float) $value) * 100);
-    $order = lintel_record_paid_order((string) ($payment['metadata']['lintel_hold'] ?? ''), 'mollie', $paymentId, $amount, $currency, 'mollie:' . $paymentId);
+    $mode = $payment['mode'] ?? null;
+    $livemode = $mode === 'test' ? false : ($mode === 'live' ? true : null);
+    $order = lintel_record_paid_order((string) ($payment['metadata']['lintel_hold'] ?? ''), 'mollie', $paymentId, $amount, $currency, 'mollie:' . $paymentId, $livemode);
     return ['received' => true, 'order' => $order];
 }
 
 /**
  * Turns a hold into an order for Lintel to collect, once per payment. A payment that
- * doesn't match the hold's total is kept aside for a person to look at.
+ * doesn't match the hold's total is kept aside for a person to look at. $livemode is what the
+ * provider said, or null when it said nothing, which Lintel takes as a real sale.
  */
-function lintel_record_paid_order(string $holdId, string $provider, string $paymentId, int $amount, string $currency, string $eventKey): ?string
+function lintel_record_paid_order(string $holdId, string $provider, string $paymentId, int $amount, string $currency, string $eventKey, ?bool $livemode = null): ?string
 {
-    return lintel_with_lock(function () use ($holdId, $provider, $paymentId, $amount, $currency, $eventKey) {
+    return lintel_with_lock(function () use ($holdId, $provider, $paymentId, $amount, $currency, $eventKey, $livemode) {
         $eventsPath = lintel_data_path('payment-events.json');
         $events = lintel_read_json($eventsPath, []);
         if (isset($events[$eventKey])) {
@@ -1135,6 +1139,7 @@ function lintel_record_paid_order(string $holdId, string $provider, string $paym
             'paidAt' => gmdate('c'),
             'paidAmount' => $amount,
             'paidCurrency' => $currency,
+            'livemode' => $livemode,
             'matches' => $amount === $quote['totalAmount'] && $currency === $quote['currency'],
             'email' => $hold['email'],
             'shippingAddress' => $hold['address'],

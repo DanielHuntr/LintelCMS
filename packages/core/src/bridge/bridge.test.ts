@@ -473,6 +473,49 @@ describe.skipIf(!hasPhp)("the PHP companion", { timeout: 60_000 }, () => {
     expect(queue()).toContain(`${started.holdId}.json`);
   });
 
+  it("says whether Stripe called a payment live, and says nothing when Stripe doesn't", async () => {
+    writePrivate("catalogue.json", signEnvelope(SECRET, catalogue(10)));
+    const deliver = async (id: string, livemode: boolean | undefined) => {
+      const started = (await (await postJson("checkout", basket(1))).json()) as { holdId: string };
+      const payload = JSON.stringify({
+        id,
+        type: "checkout.session.completed",
+        ...(livemode === undefined ? {} : { livemode }),
+        data: {
+          object: {
+            id: `cs_${id}`,
+            payment_status: "paid",
+            amount_total: 845,
+            currency: "gbp",
+            payment_intent: `pi_${id}`,
+            metadata: { lintel_hold: started.holdId },
+          },
+        },
+      });
+      const time = Math.floor(Date.now() / 1000);
+      await fetch(`${base}?action=stripe-webhook`, {
+        method: "POST",
+        headers: {
+          "stripe-signature": `t=${time},v1=${hmacHex(STRIPE_WEBHOOK_SECRET, `${time}.${payload}`)}`,
+          "content-type": "application/json",
+        },
+        body: payload,
+      });
+      return started.holdId;
+    };
+    const test = await deliver("evt_test", false);
+    const live = await deliver("evt_live", true);
+    const unsaid = await deliver("evt_unsaid", undefined);
+
+    const pulled = (await (await signed("pull")).json()) as {
+      orders: Array<{ id: string; livemode?: boolean | null }>;
+    };
+    const said = new Map(pulled.orders.map((order) => [order.id, order.livemode]));
+    expect(said.get(test)).toBe(false);
+    expect(said.get(live)).toBe(true);
+    expect(said.get(unsaid) ?? null).toBeNull();
+  });
+
   it("checks Mollie's message by asking Mollie about the payment", async () => {
     const catalogueWithMollie = catalogue(10);
     const market = catalogueWithMollie.markets[0];
