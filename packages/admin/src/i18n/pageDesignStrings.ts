@@ -39,6 +39,8 @@ export const pageDesignStrings = {
   "pageDesign.simpleSections.unused": "Not used",
   "pageDesign.simpleSections.count": "{count, plural, one {# section} other {# sections}}",
   "pageDesign.siteStyles.useMine": "Use my version",
+  "pageDesign.siteSections.changedElsewhere":
+    "Someone else changed the site's navigation or footer while you were working, so yours hasn't been saved. Their version is safe.",
   "pageDesign.siteStyles.changedElsewhere":
     "Someone else changed the site's styles while you were working, so your last change wasn't saved. You're now seeing their version.",
   "pageDesign.siteStyles.notSaved": "The site's styles weren't saved: {message}",

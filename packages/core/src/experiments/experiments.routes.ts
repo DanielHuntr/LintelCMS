@@ -90,8 +90,15 @@ export async function experimentsRoutes(server: FastifyInstance) {
 
   server.put("/experiments/:id/versions/:version", manage, async (request) => {
     const { id, version } = parseRequest(versionParamsSchema, request.params);
-    const { design } = parseRequest(saveVersionRequestSchema, request.body);
-    return saveVersion(server.database, id, version, design, getSignedIn(request).permissions);
+    const { design, baseUpdatedAt } = parseRequest(saveVersionRequestSchema, request.body);
+    return saveVersion(
+      server.database,
+      id,
+      version,
+      design,
+      getSignedIn(request).permissions,
+      baseUpdatedAt,
+    );
   });
 
   server.delete("/experiments/:id/versions/:version", manage, async (request) => {

@@ -22,8 +22,10 @@ import {
   findSectionTemplate,
   importHtml,
   listNodes,
+  mergeText,
   type PageDocument,
   type PageNode,
+  type RemoteUpdate,
   rootNodeId,
   type StarterPage,
   type StylePropertyName,
@@ -68,6 +70,15 @@ interface UseBuilderOptions {
    * site-sections/ in the model). Off, they're added to this page like any other.
    */
   sharesSiteSections?: boolean;
+  /** Changes made by someone else, to bring into this page. */
+  incomingChanges?: IncomingChanges;
+  /** Dresses an incoming page as the builder holds it (with the site's sections in it). */
+  dressIncoming?: (page: PageDocument, current: PageDocument) => PageDocument;
+}
+
+/** Tells the builder about changes made by someone else (see `RemoteUpdate` in the model). */
+export interface IncomingChanges {
+  subscribe: (listener: (update: RemoteUpdate) => void) => () => void;
 }
 
 /**
@@ -84,6 +95,8 @@ export function useBuilder({
   onChange,
   blocks = noBlockLibrary,
   sharesSiteSections = false,
+  incomingChanges,
+  dressIncoming,
 }: UseBuilderOptions) {
   // Menus made before they had a Menu link get one, so it shows in Layers. It's saved with
   // the next change; until then the page is as it was.
@@ -100,6 +113,16 @@ export function useBuilder({
   const announce = useCallback(
     (message: string) => setAnnouncement((current) => ({ message, count: current.count + 1 })),
     [],
+  );
+
+  useEffect(
+    () =>
+      incomingChanges?.subscribe(({ document, changes }) => {
+        const from = latest.current.document;
+        const to = dressIncoming ? dressIncoming(document, from) : document;
+        dispatch({ type: "remote", from, to, changes });
+      }),
+    [incomingChanges, dressIncoming],
   );
 
   const lastSent = useRef(state.document);
@@ -355,9 +378,15 @@ export function useBuilder({
         run(commands.changeBinding(context(), nodeId, prop, fieldPath, label), ""),
       changeStyles: (nodeId: string, target: StyleTarget, values: StyleValues, label: string) =>
         run(commands.changeStyles(context(), nodeId, target, values, label), ""),
-      editText: (nodeId: string, prop: string, value: string) => {
+      editText: (nodeId: string, prop: string, typed: string, original?: string) => {
         const node = nodeById(nodeId);
-        if (node && node.props[prop] !== value) {
+        const current = node?.props[prop];
+        // Someone else may have changed these words while they were being typed in.
+        const value =
+          original !== undefined && typeof current === "string"
+            ? mergeText(original, typed, current)
+            : typed;
+        if (node && current !== value) {
           run(commands.changeProps(context(), nodeId, { [prop]: value }, name(node)));
         }
       },

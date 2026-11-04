@@ -62,10 +62,15 @@ export function addVersion(experimentId: string, from: VersionKey) {
   });
 }
 
-export function saveVersion(experimentId: string, key: ChallengerKey, design: PageDocument) {
+export function saveVersion(
+  experimentId: string,
+  key: ChallengerKey,
+  design: PageDocument,
+  baseUpdatedAt?: string | null,
+) {
   return apiRequest<Experiment>(`${experimentPath(experimentId)}/versions/${key}`, {
     method: "PUT",
-    body: { design },
+    body: { design, ...(baseUpdatedAt === undefined ? {} : { baseUpdatedAt }) },
   });
 }
 

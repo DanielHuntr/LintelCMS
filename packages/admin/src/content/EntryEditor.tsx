@@ -35,6 +35,8 @@ import {
   focusField,
   focusTargetFor,
 } from "./fieldErrors.js";
+import { ConflictDialog } from "../collaboration/ConflictDialog.js";
+import { describeEntryClashes } from "../collaboration/describeClashes.js";
 import { PeopleHere } from "../collaboration/PeopleHere.js";
 import { usePeopleHere } from "../collaboration/usePeople.js";
 import { SaveIndicator } from "./SaveIndicator.js";
@@ -193,7 +195,7 @@ export function EntryEditor({
     draft: state.current,
     hasUnsavedChanges: isUnsaved,
     // A new entry isn't created until it has a title, so empty drafts don't pile up.
-    isEnabled: canSave && (entry !== undefined || title.trim() !== ""),
+    isEnabled: canSave && actions.conflict === null && (entry !== undefined || title.trim() !== ""),
     save: async (draft, options) => {
       const saved = await actions.save(draft, options);
       // The tree shows the name and the "changed since publishing" dot.
@@ -404,6 +406,15 @@ export function EntryEditor({
   return (
     <div ref={setEditorElement} className={classNames("w-full", editorWidths[companion])}>
       <h1 className="sr-only">{title || t("editor.untitled")}</h1>
+      {actions.conflict && (
+        <ConflictDialog
+          personName={actions.conflict.latest.updatedBy?.name ?? null}
+          items={describeEntryClashes(actions.conflict, blueprint.fields, state.current)}
+          onKeepMine={actions.keepMine}
+          onUseTheirs={() => actions.useTheirs(state.current)}
+          onClose={actions.putOffConflict}
+        />
+      )}
 
       <EntryEditorBar
         breadcrumbs={<EntryBreadcrumbs collection={collection} entryId={entry?.id} title={title} />}

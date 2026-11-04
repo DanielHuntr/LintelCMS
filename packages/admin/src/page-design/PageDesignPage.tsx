@@ -49,6 +49,8 @@ import { useBuilderData, useCanvasSite, useViewPageSite } from "../website/websi
 import { useEffectModules } from "./useEffectModules.js";
 import { useBuilderBlocks } from "../blocks/useBuilderBlocks.js";
 import { usePageDesignSaving } from "./usePageDesignSaving.js";
+import { ConflictDialog } from "../collaboration/ConflictDialog.js";
+import { describeDesignClashes } from "../collaboration/describeClashes.js";
 import { PeopleHere } from "../collaboration/PeopleHere.js";
 import { usePeopleHere } from "../collaboration/usePeople.js";
 import { SitePartProblems } from "./SitePartProblems.js";
@@ -85,6 +87,9 @@ export const canvasFrameScripts = {
   frame: besideTheAdmin("canvas-frame.js"),
   motion: besideTheAdmin("canvas-motion.js"),
 };
+
+const mergeNoteClasses =
+  "fixed bottom-4 left-1/2 z-40 max-w-xl -translate-x-1/2 rounded-card bg-surface-raised px-4 py-3 text-footnote text-label shadow-float";
 
 interface PageDesignPageProps {
   collectionHandle: string;
@@ -159,6 +164,7 @@ function PageDesigner({
   const saving = usePageDesignSaving(
     loadedEntry,
     fieldHandle,
+    "document" in opened ? opened.document : null,
     canPublishShared ? shared.publish : undefined,
   );
   const session = useSession();
@@ -355,6 +361,7 @@ function PageDesigner({
         key={experiments.editing}
         initialDocument={experiments.initialDocument ?? opened.document}
         onChange={changeDesign}
+        incomingChanges={experiments.isEditingVersion ? undefined : saving.incomingChanges}
         onSelectionChange={experiments.select}
         title={title}
         toolbarTitleNote={
@@ -463,6 +470,22 @@ function PageDesigner({
           {saving.errorMessage}
         </p>
       )}
+      {saving.conflict && (
+        <ConflictDialog
+          personName={saving.conflict.latest.updatedBy?.name ?? null}
+          items={describeDesignClashes(
+            saving.conflict.clashes,
+            saving.conflict.base,
+            saving.conflict.theirs,
+          )}
+          onKeepMine={saving.keepMine}
+          onUseTheirs={saving.useTheirs}
+          onClose={saving.putOffConflict}
+        />
+      )}
+      <p role="status" className={saving.mergeNote ? mergeNoteClasses : "sr-only"}>
+        {saving.mergeNote}
+      </p>
       <SentBackNote
         state={reviewState.data}
         className="fixed bottom-4 left-4 z-30 max-w-md shadow-float"

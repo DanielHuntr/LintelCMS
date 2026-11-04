@@ -87,6 +87,8 @@ export function updateEntry(
   entryId: string,
   changes: EntryUpdate,
   saveVersion = false,
+  /** The version this save started from. A newer one is refused, not saved over. */
+  baseVersion?: number,
 ): Promise<Entry> {
   return apiRequest<Entry>(`/entries/${entryId}`, {
     method: "PATCH",
@@ -95,7 +97,16 @@ export function updateEntry(
       slug: changes.slug === undefined ? undefined : slugForSaving(changes.slug),
       parentId: changes.parentId,
       ...(saveVersion ? { saveVersion: true } : {}),
+      ...(baseVersion === undefined ? {} : { baseVersion }),
     },
+  });
+}
+
+/** Sets a version aside in History without saving it, for changes someone chose not to use. */
+export function keepVersion(entryId: string, data: EntryData): Promise<void> {
+  return apiRequest<void>(`/entries/${entryId}/revisions/keep`, {
+    method: "POST",
+    body: { data },
   });
 }
 

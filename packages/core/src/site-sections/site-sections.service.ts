@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import {
   applyScriptRule,
   asSiteSection,
@@ -27,6 +28,7 @@ import {
   NoPreviousSiteSectionsError,
   SiteSectionCodeNotAllowedError,
   SiteSectionNotValidError,
+  SiteSectionChangedError,
 } from "./site-sections.errors.js";
 import {
   deleteDraftSiteSections,
@@ -50,6 +52,22 @@ import {
  * everything else visitors see read the published sections (`readSiteSections`); the
  * builder reads and changes the draft (`readSiteSectionsDraft`, `changeSiteSections`).
  */
+
+/** Which version of a section this is, to compare with the one someone started from. */
+export function sectionRevision(section: PageNode | null): string {
+  return createHash("sha256").update(JSON.stringify(section)).digest("base64url").slice(0, 22);
+}
+
+/** The sections' revisions, sent with them. */
+export function withRevisions<Draft extends SiteSections>(draft: Draft) {
+  return {
+    ...draft,
+    revisions: {
+      navigation: sectionRevision(draft.navigation),
+      footer: sectionRevision(draft.footer),
+    },
+  };
+}
 
 /** One section as a page of its own, for checking it as pages are checked. */
 function asPage(section: PageNode): PageDocument {
@@ -123,9 +141,21 @@ export async function changeSiteSections(
   site: Site,
   change: SiteSectionsChange,
   rules: { mayEditCode: boolean },
+  /** Each section as the person saving last read it, so a newer one isn't overwritten. */
+  baseRevisions: Partial<Record<SiteSectionSlot, string>> = {},
 ): Promise<SiteSectionsDraft> {
   const draft = await readSiteSectionsDraft(database, site);
   const current: SiteSections = { navigation: draft.navigation, footer: draft.footer };
+  for (const slot of siteSectionSlots) {
+    const base = baseRevisions[slot];
+    if (
+      change[slot] !== undefined &&
+      base !== undefined &&
+      base !== sectionRevision(current[slot])
+    ) {
+      throw new SiteSectionChangedError(slot);
+    }
+  }
   const scriptRule = await readSetting(database, "builderCustomScripts");
   const next: SiteSections = { ...current };
   for (const slot of siteSectionSlots) {

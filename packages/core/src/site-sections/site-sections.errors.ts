@@ -25,3 +25,15 @@ export class NoPreviousSiteSectionsError extends HttpError {
     );
   }
 }
+
+/** Someone else saved this section after the person saving opened it. */
+export class SiteSectionChangedError extends HttpError {
+  constructor(slot: "navigation" | "footer") {
+    super(
+      409,
+      "SITE_SECTION_CHANGED",
+      `Someone else changed the site's ${slot} while you were working on it.`,
+      { slot },
+    );
+  }
+}

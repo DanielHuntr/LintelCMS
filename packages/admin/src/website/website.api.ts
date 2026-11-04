@@ -145,15 +145,25 @@ export function updateSiteDesign(design: SiteDesign, revision?: string | null) {
  * The site's navigation and footer sections, shown on every page, as the builder works on
  * them: `unpublished` says the website still shows the last published ones.
  */
-export type SiteSectionsDraft = SiteSections & { unpublished?: boolean };
+export type SiteSectionsDraft = SiteSections & {
+  unpublished?: boolean;
+  /** Which version of each section this is, to send back when saving. */
+  revisions?: { navigation: string; footer: string };
+};
 
 export function getSiteSections() {
   return apiRequest<SiteSectionsDraft>("/website/sections");
 }
 
 /** Changes the slots sent in the draft; the others stay as they are. */
-export function updateSiteSections(change: SiteSectionsChange) {
-  return apiRequest<SiteSectionsDraft>("/website/sections", { method: "PUT", body: change });
+export function updateSiteSections(
+  change: SiteSectionsChange,
+  baseRevisions?: SiteSectionsDraft["revisions"],
+) {
+  return apiRequest<SiteSectionsDraft>("/website/sections", {
+    method: "PUT",
+    body: { ...change, ...(baseRevisions ? { baseRevisions } : {}) },
+  });
 }
 
 /** Puts the draft navigation and footer on the website. */

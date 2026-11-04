@@ -75,6 +75,8 @@ export function ContentEditingScreen(props: PageBuilderProps & { text: Translate
     text,
     onChange: shared.onChange,
     blocks: blocks.library,
+    incomingChanges: props.incomingChanges,
+    dressIncoming: shared.dressIncoming,
   });
   const { root } = state.document;
   const [breakpoint, setBreakpoint] = useState<Breakpoint>("base");
@@ -203,7 +205,7 @@ export function ContentEditingScreen(props: PageBuilderProps & { text: Translate
       if (message.type === "editText") {
         const node = findNode(root, message.nodeId);
         if (node && mayEditText(node, message.prop)) {
-          actions.editText(message.nodeId, message.prop, message.text);
+          actions.editText(message.nodeId, message.prop, message.text, message.original);
         }
       }
       if (message.type === "key") runShortcut(message.key);

@@ -1,4 +1,9 @@
-import type { PageDocument } from "@lintel/builder-model";
+import {
+  applyPageChanges,
+  diffPages,
+  type PageChange as PageStep,
+  type PageDocument,
+} from "@lintel/builder-model";
 
 /**
  * The builder's state that undo covers: the page and the selection, with the history of
@@ -41,7 +46,9 @@ export type EditorAction =
   /** Goes back to just after the change at `index` in `past`; -1 is before any change. */
   | { type: "goToStep"; index: number }
   | { type: "select"; nodeId: string | null }
-  | { type: "load"; document: PageDocument };
+  | { type: "load"; document: PageDocument }
+  /** Someone else's changes arrived: the page goes from `from` to `to` (see `applyRemote`). */
+  | { type: "remote"; from: PageDocument; to: PageDocument; changes: readonly PageStep[] };
 
 export const historyLimit = 200;
 /** Changes with the same key closer together than this become one step. */
@@ -65,6 +72,8 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
       return state.selectedId === action.nodeId ? state : { ...state, selectedId: action.nodeId };
     case "load":
       return createEditorState(action.document);
+    case "remote":
+      return applyRemote(state, action);
   }
 }
 
@@ -90,6 +99,25 @@ function applyChange(state: EditorState, change: PageChange, at: number): Editor
     past,
     future: [],
     lastChange: change.coalesceKey === undefined ? null : { coalesceKey: change.coalesceKey, at },
+  };
+}
+
+/**
+ * Someone else's changes. Undo is each person's own, so they go into the history too: every
+ * step's page gets them, and undoing a step then takes away this person's change and nothing
+ * of the other person's. A change of this person's that hadn't been reported yet is kept.
+ */
+function applyRemote(
+  state: EditorState,
+  { from, to, changes }: Extract<EditorAction, { type: "remote" }>,
+): EditorState {
+  const document =
+    state.document === from ? to : applyPageChanges(to, diffPages(from, state.document));
+  return {
+    ...state,
+    document,
+    past: state.past.map((step) => ({ ...step, before: applyPageChanges(step.before, changes) })),
+    future: state.future.map((step) => ({ ...step, after: applyPageChanges(step.after, changes) })),
   };
 }
 

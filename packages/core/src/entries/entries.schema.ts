@@ -72,7 +72,15 @@ export const updateEntryRequestSchema = z.object({
    * joins the person's open revision, as autosaves do.
    */
   saveVersion: z.boolean().optional(),
+  /**
+   * The `version` of the entry this save started from. Sent, the save is refused with 409
+   * ENTRY_CHANGED if the entry has changed since. Left out, the save goes over the latest.
+   */
+  baseVersion: z.number().int().positive().optional(),
 });
+
+/** `POST /entries/:id/revisions/keep`: sets a version aside in History, without saving it. */
+export const keepVersionRequestSchema = z.object({ data: entryDataSchema });
 
 /** `POST /entries/:id/schedule` */
 export const scheduleEntryRequestSchema = z.object({
@@ -118,6 +126,8 @@ export const entrySchema = entrySummarySchema.extend({
   blueprint: blueprintSchema,
   /** True when the saved values differ from the published ones still being served. */
   hasUnpublishedChanges: z.boolean(),
+  /** Goes up with every change: send it back as `baseVersion` when saving. */
+  version: z.number().int(),
   /** The same entry in the site's other languages: its origin and the origin's translations. */
   translations: z.array(
     z.object({

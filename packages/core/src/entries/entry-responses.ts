@@ -64,6 +64,7 @@ export function describeEntry(
     data: entry.data,
     blueprint: describeBlueprint(blueprint),
     hasUnpublishedChanges: hasUnpublishedChanges(entry),
+    version: entry.version,
     translations,
     createdById: entry.createdBy,
   };

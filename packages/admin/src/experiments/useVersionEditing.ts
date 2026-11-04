@@ -1,6 +1,7 @@
 import { type PageDocument, siteSectionIds } from "@lintel/builder-model";
 import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
+import { ApiError } from "../api/client.js";
 import { describeError } from "../api/describeError.js";
 import type { SaveStatus } from "../content/entryDraft.js";
 import { useAutosave } from "../content/useAutosave.js";
@@ -30,19 +31,28 @@ export function useVersionEditing(entryId: string, enabled: boolean) {
   const [status, setStatus] = useState<SaveStatus>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const hasUnsavedChanges = draft !== null && draft.design !== saved;
+  const overridesFrom = useRef<string | undefined>(undefined);
 
   const save = useCallback(
     async (next: { key: ChallengerKey; design: PageDocument } | null) => {
       if (!next || !experiment) return;
       setStatus("saving");
       try {
-        const updated = await saveVersion(experiment.id, next.key, next.design);
+        const base =
+          overridesFrom.current ??
+          experiment.versions.find((version) => version.key === next.key)?.updatedAt;
+        const updated = await saveVersion(experiment.id, next.key, next.design, base);
+        overridesFrom.current = undefined;
         queryClient.setQueryData(experimentKeys.forPage(entryId), updated);
         queryClient.setQueryData(experimentKeys.experiment(updated.id), updated);
         setSaved(next.design);
         setStatus("saved");
         setErrorMessage(null);
       } catch (error) {
+        // The message says so; pressing Try again is choosing to save over the other person's.
+        if (error instanceof ApiError && error.code === "VERSION_CHANGED") {
+          overridesFrom.current = String(error.details.updatedAt);
+        }
         setStatus("failed");
         setErrorMessage(describeError(error));
         throw error;

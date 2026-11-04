@@ -43,7 +43,13 @@ export type EntryDraftAction =
   | { type: "saveFailed"; fieldErrors: FieldMessages; message: string }
   /** Publishing or scheduling was refused because fields need filling in; the draft is saved. */
   | { type: "publishBlocked"; fieldErrors: FieldMessages }
-  | { type: "entryReplaced"; entry: Entry };
+  | { type: "entryReplaced"; entry: Entry }
+  /**
+   * Someone else saved this entry. Their values come in, except where this person has edits
+   * of their own. `useTheirs` lists fields where they chose the other person's. `redraw` starts
+   * field editors afresh; it is left off when nobody asked for this, so typing isn't interrupted.
+   */
+  | { type: "rebased"; entry: Entry; useTheirs?: readonly string[]; redraw?: boolean };
 
 export function draftFromEntry(entry: Entry): EntryDraft {
   return { data: entry.data, slug: entry.slug, parentId: entry.parentId };
@@ -68,6 +74,51 @@ export function changesSince(
     ...(current.slug !== saved.slug ? { slug: current.slug } : {}),
     ...(current.parentId !== saved.parentId ? { parentId: current.parentId } : {}),
   };
+}
+
+/**
+ * This person's draft on top of someone else's save: fields they haven't touched take the
+ * saved values, and fields they have keep their edits, except any listed in `useTheirs`.
+ */
+export function rebaseDraft(
+  saved: EntryDraft,
+  current: EntryDraft,
+  latest: Entry,
+  useTheirs: readonly string[] = [],
+): EntryDraft {
+  const theirs = draftFromEntry(latest);
+  const mine = changesSince(saved, current);
+  const keep = (handle: string) => !useTheirs.includes(handle);
+  return {
+    data: {
+      ...theirs.data,
+      ...Object.fromEntries(Object.entries(mine.data).filter(([handle]) => keep(handle))),
+    },
+    slug: mine.slug !== undefined && keep("slug") ? mine.slug : theirs.slug,
+    parentId: mine.parentId !== undefined && keep("parentId") ? mine.parentId : theirs.parentId,
+  };
+}
+
+/** Where this person and someone else's save both changed the same thing, differently. */
+export function findDraftClashes(saved: EntryDraft, current: EntryDraft, latest: Entry): string[] {
+  const theirs = draftFromEntry(latest);
+  const mine = changesSince(saved, current);
+  const clashes = Object.keys(mine.data).filter(
+    (handle) =>
+      !isSameValue(theirs.data[handle], saved.data[handle]) &&
+      !isSameValue(theirs.data[handle], mine.data[handle]),
+  );
+  if (mine.slug !== undefined && theirs.slug !== saved.slug && theirs.slug !== mine.slug) {
+    clashes.push("slug");
+  }
+  if (
+    mine.parentId !== undefined &&
+    theirs.parentId !== saved.parentId &&
+    theirs.parentId !== mine.parentId
+  ) {
+    clashes.push("parentId");
+  }
+  return clashes;
 }
 
 /**
@@ -158,6 +209,14 @@ export function entryDraftReducer(
 
     case "publishBlocked":
       return { ...state, fieldErrors: action.fieldErrors };
+
+    case "rebased":
+      return {
+        ...state,
+        saved: draftFromEntry(action.entry),
+        current: rebaseDraft(state.saved, state.current, action.entry, action.useTheirs),
+        formVersion: action.redraw ? state.formVersion + 1 : state.formVersion,
+      };
 
     case "entryReplaced": {
       const draft = draftFromEntry(action.entry);

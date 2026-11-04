@@ -85,7 +85,7 @@ import {
   stillThere,
 } from "./editor/multi-selection.js";
 import type { LayerSelectHow } from "./panels/LayersPanel.js";
-import { useBuilder } from "./editor/useBuilder.js";
+import { type IncomingChanges, useBuilder } from "./editor/useBuilder.js";
 import { Breadcrumbs } from "./frame/Breadcrumbs.js";
 import { EmptyPage } from "./frame/EmptyPage.js";
 import { Toolbar } from "./frame/Toolbar.js";
@@ -252,6 +252,8 @@ export interface PageBuilderProps {
    * Left out, neither is shown.
    */
   pageDrafting?: PageDrafting;
+  /** Changes made to this page by someone else, merged into what's on screen. */
+  incomingChanges?: IncomingChanges;
   /** Told which element is selected (null for none), such as for trying another version of it. */
   onSelectionChange?: (nodeId: string | null) => void;
   /**
@@ -311,6 +313,8 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
     onChange: sharedSections.onChange,
     blocks: blocks.library,
     sharesSiteSections: props.siteSections?.onChange !== undefined,
+    incomingChanges: props.incomingChanges,
+    dressIncoming: sharedSections.dressIncoming,
   });
   const { onSelectionChange } = props;
   useEffect(() => onSelectionChange?.(selectedId), [onSelectionChange, selectedId]);
@@ -788,7 +792,9 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
         );
       }
       if (message.type === "hover") setHoveredId(message.nodeId);
-      if (message.type === "editText") actions.editText(message.nodeId, message.prop, message.text);
+      if (message.type === "editText") {
+        actions.editText(message.nodeId, message.prop, message.text, message.original);
+      }
       if (message.type === "key") runShortcut(message.key);
       if (message.type === "look") {
         setCanvasLook({

@@ -4,6 +4,7 @@ import {
   type PageDocument,
   type SiteSections,
   type SiteSectionsChange,
+  siteSectionSlotOf,
   siteSectionSlots,
   splitSiteSections,
   withSiteSections,
@@ -92,9 +93,26 @@ export function useSiteSections(
     if (Object.keys(change).length > 0) current.onChange(change);
   }, []);
 
+  /** A page from elsewhere, with the sections as they are on screen now. */
+  const dressIncoming = useCallback((page: PageDocument, current: PageDocument) => {
+    if (!latest.current.source) return page;
+    const dressed = withSiteSections(page, splitSiteSections(current).sections);
+    const isLocked = (id: string) => current.root.children.find((each) => each.id === id)?.locked;
+    return {
+      ...dressed,
+      root: {
+        ...dressed.root,
+        children: dressed.root.children.map((child) =>
+          siteSectionSlotOf(child.id) && isLocked(child.id) ? { ...child, locked: true } : child,
+        ),
+      },
+    };
+  }, []);
+
   return {
     initialDocument: opened.document,
     onChange: handleChange,
+    dressIncoming,
     /** What the site had when the page was opened, for the note when that changes. */
     had: { navigation: opened.had.navigation !== null, footer: opened.had.footer !== null },
   };

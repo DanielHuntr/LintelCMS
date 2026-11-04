@@ -544,7 +544,7 @@ export function runCanvasFrame(snap: typeof snapBox, fitGrid: typeof fitToGrid):
     const nodeId = nodeIdAt(element);
     const prop = element.getAttribute("data-lintel-text");
     if (keep && nodeId && prop && text !== editingOriginal) {
-      send({ type: "editText", nodeId, prop, text });
+      send({ type: "editText", nodeId, prop, text, original: editingOriginal });
     }
     if (!keep) element.innerText = editingOriginal;
     if (waitingRender) {

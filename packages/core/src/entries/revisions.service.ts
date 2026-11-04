@@ -12,6 +12,7 @@ import {
   findEntryOrFail,
   validateForCollection,
 } from "./entries.service.js";
+import type { EntryData } from "./entries.table.js";
 import { recordEvent } from "./revision-log.js";
 import {
   findRevisionForEntry,
@@ -89,4 +90,19 @@ export async function restoreRevision(
     });
   });
   return findEntry(database, entry.id);
+}
+
+/**
+ * Sets a version aside in History without saving it: what someone had when they chose another
+ * person's changes over theirs. It can be restored like any other version, and restoring
+ * checks it then. It joins nobody's open revision, so autosaves can't change it.
+ */
+export async function keepVersion(
+  database: DatabaseOrTransaction,
+  entryId: string,
+  data: EntryData,
+  authorId: string,
+): Promise<void> {
+  const entry = await findEntryOrFail(database, entryId);
+  await recordEvent(database, { entryId: entry.id, authorId, kind: "kept", data });
 }

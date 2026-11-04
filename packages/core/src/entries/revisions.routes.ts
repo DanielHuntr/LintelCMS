@@ -1,11 +1,12 @@
 import type { FastifyInstance } from "fastify";
-import { requirePermission } from "../auth/require-permission.js";
+import { getSignedIn, requirePermission } from "../auth/require-permission.js";
+import { parseRequest } from "../http/http-errors.js";
 import { requireEntrySiteAccess } from "../sites/request-site.js";
 import { RevisionNotFoundError } from "./entries.errors.js";
 import { requireEntryPermission } from "./entry-access.js";
 import { changeContext, readEntryId } from "./entries.routes.js";
-import { revisionParamsSchema } from "./entries.schema.js";
-import { findRevision, listRevisions, restoreRevision } from "./revisions.service.js";
+import { keepVersionRequestSchema, revisionParamsSchema } from "./entries.schema.js";
+import { findRevision, keepVersion, listRevisions, restoreRevision } from "./revisions.service.js";
 
 /**
  * HTTP only:
@@ -13,6 +14,7 @@ import { findRevision, listRevisions, restoreRevision } from "./revisions.servic
  *   GET  /entries/:id/revisions                              (entries:read)   newest first
  *   GET  /entries/:id/revisions/:revisionId                  (entries:read)   with its data
  *   POST /entries/:id/revisions/:revisionId/restore          (entries:update) -> Entry
+ *   POST /entries/:id/revisions/keep                         (entries:update) { data } -> 204
  */
 export async function revisionsRoutes(server: FastifyInstance) {
   const canRead = { preHandler: [requirePermission("entries:read"), requireEntrySiteAccess] };
@@ -27,6 +29,13 @@ export async function revisionsRoutes(server: FastifyInstance) {
   server.get("/entries/:id/revisions/:revisionId", canRead, async (request) => {
     const { id, revisionId } = readRevisionParams(request.params);
     return findRevision(server.database, id, revisionId);
+  });
+
+  server.post("/entries/:id/revisions/keep", canUpdate, async (request, reply) => {
+    const { data } = parseRequest(keepVersionRequestSchema, request.body);
+    const id = readEntryId(request.params);
+    await keepVersion(server.database, id, data, getSignedIn(request).user.id);
+    return reply.code(204).send();
   });
 
   server.post("/entries/:id/revisions/:revisionId/restore", canUpdate, async (request) => {

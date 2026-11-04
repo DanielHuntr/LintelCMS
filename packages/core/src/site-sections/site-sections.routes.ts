@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { siteSectionsChangeSchema } from "@lintel/builder-model";
 import type { FastifyInstance } from "fastify";
 import { getSignedIn, requirePermission } from "../auth/require-permission.js";
@@ -9,6 +10,7 @@ import {
   changeSiteSections,
   publishSiteSections,
   readSiteSectionsDraft,
+  withRevisions,
   restorePreviousSiteSections,
 } from "./site-sections.service.js";
 
@@ -26,11 +28,20 @@ import {
  * it is; null takes it off the site. Changing them changes every page, like changing a
  * block, so it needs the same permission; publishing them needs both.
  */
+const baseRevisionsSchema = z.object({
+  baseRevisions: z
+    .object({ navigation: z.string().max(64).optional(), footer: z.string().max(64).optional() })
+    .optional(),
+});
+
 export async function siteSectionsRoutes(server: FastifyInstance) {
   server.get(
     "/website/sections",
     { preHandler: requirePermission("entries:read") },
-    async (request) => readSiteSectionsDraft(server.database, await resolveEditingSite(request)),
+    async (request) =>
+      withRevisions(
+        await readSiteSectionsDraft(server.database, await resolveEditingSite(request)),
+      ),
   );
 
   server.put(
@@ -38,9 +49,15 @@ export async function siteSectionsRoutes(server: FastifyInstance) {
     { preHandler: requirePermission("builder:blocks") },
     async (request) => {
       const change = parseRequest(siteSectionsChangeSchema, request.body ?? {});
-      return changeSiteSections(server.database, await resolveEditingSite(request), change, {
-        mayEditCode: hasPermission(getSignedIn(request).permissions, "builder:code"),
-      });
+      const { baseRevisions } = parseRequest(baseRevisionsSchema, request.body ?? {});
+      const saved = await changeSiteSections(
+        server.database,
+        await resolveEditingSite(request),
+        change,
+        { mayEditCode: hasPermission(getSignedIn(request).permissions, "builder:code") },
+        baseRevisions,
+      );
+      return withRevisions(saved);
     },
   );
 

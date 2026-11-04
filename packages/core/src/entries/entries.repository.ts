@@ -2,6 +2,7 @@ import { and, asc, desc, eq, ilike, inArray, isNull, or, type SQL, sql } from "d
 import { type Blueprint, blueprintsTable } from "../blueprints/blueprints.table.js";
 import { collectionsTable } from "../collections/collections.table.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
+import { updateReturning } from "../database/dialect/writes.js";
 import { usersTable } from "../users/users.table.js";
 import type { TreePosition } from "./entry-tree.js";
 import { type Entry, entriesTable, type EntryStatus, type NewEntry } from "./entries.table.js";
@@ -225,6 +226,25 @@ export async function updateEntryRow(
   if (!updated) {
     throw new Error("The database did not return the updated entry.");
   }
+  return updated;
+}
+
+/**
+ * Saves changes only if the row is still at this version, so two saves can't both start from
+ * the same version. Undefined when another save got there first.
+ */
+export async function updateEntryRowAtVersion(
+  database: DatabaseOrTransaction,
+  entryId: string,
+  version: number,
+  changes: Partial<Omit<NewEntry, "id" | "tenantId" | "collectionId" | "siteId">>,
+): Promise<Entry | undefined> {
+  const [updated] = await updateReturning(
+    database,
+    entriesTable,
+    changes,
+    and(eq(entriesTable.id, entryId), eq(entriesTable.version, version)),
+  );
   return updated;
 }
 

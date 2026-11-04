@@ -100,7 +100,8 @@ export type MessageFromFrame =
   /** `add`: Shift (or Ctrl/Cmd) was held, to add the element to the selection or take it away. */
   | { type: "select"; nodeId: string | null; menuItem?: CanvasMenuItem; add?: boolean }
   | { type: "hover"; nodeId: string | null }
-  | { type: "editText"; nodeId: string; prop: string; text: string }
+  /** `original`: the words when typing started, in case they changed on screen meanwhile. */
+  | { type: "editText"; nodeId: string; prop: string; text: string; original?: string }
   | { type: "key"; key: ForwardedKey }
   | { type: "paste"; html: string; text: string }
   /** Files dropped on the page, over the element `nodeId` (null: over no element). */
@@ -218,7 +219,10 @@ export function readFrameMessage(data: unknown): MessageFromFrame | null {
     case "hover":
       return isOptionalId(message.nodeId) ? (message as MessageFromFrame) : null;
     case "editText":
-      return isText(message.nodeId) && isText(message.prop) && isText(message.text)
+      return isText(message.nodeId) &&
+        isText(message.prop) &&
+        isText(message.text) &&
+        (message.original === undefined || isText(message.original))
         ? (message as MessageFromFrame)
         : null;
     case "key":

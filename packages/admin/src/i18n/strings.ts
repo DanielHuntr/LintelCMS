@@ -640,6 +640,7 @@ const english = {
   "revisions.published": "Published",
   "revisions.unpublished": "Unpublished",
   "revisions.scheduled": "Scheduled",
+  "revisions.kept": "Set aside when changes clashed",
   "revisions.restoredFrom": "Restored from {date}",
   "revisions.today": "Today",
   "revisions.yesterday": "Yesterday",
