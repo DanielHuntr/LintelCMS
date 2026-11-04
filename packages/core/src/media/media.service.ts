@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { DEFAULT_TENANT_ID } from "../database/columns.js";
-import { findErrorCode } from "../database/database-errors.js";
+import { isUniqueViolation } from "../database/database-errors.js";
 import type { AssetUsageFinder } from "./asset-lookup.js";
 import { toAssetResponse } from "./asset-response.js";
 import { decodeAsText, detectFileType, findAllowedFileType } from "./file-types.js";
@@ -239,8 +239,4 @@ export async function deleteAsset(media: MediaContext, assetId: string): Promise
   await deleteAssetRow(media.database, DEFAULT_TENANT_ID, assetId);
   await media.storage.delete(row.storageKey);
   await removeCachedTransforms(media.cacheFolder, assetId);
-}
-
-function isUniqueViolation(error: unknown): boolean {
-  return findErrorCode(error) === "23505";
 }

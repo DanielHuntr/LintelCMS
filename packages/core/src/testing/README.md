@@ -41,3 +41,12 @@ describe("signing in", () => {
 | `multipart.ts`     | `multipartFile`: a file upload body for `server.inject`               |
 | `test-people.ts`   | `createPersonWithRole` (built-in roles), `tokenFromLatestEmail`       |
 | `test-passkey.ts`  | A software passkey that answers WebAuthn requests like a phone would  |
+
+For other databases (see `src/database/dialect/README.md`):
+
+| File                           | What it does                                                        |
+| ------------------------------ | ------------------------------------------------------------------- |
+| `every-database.ts`            | `describeOnEveryDatabase`, for `*.dialects.test.ts` files           |
+| `postgres-only-code.ts`        | Finds code only Postgres can run; its test keeps the list shrinking |
+| `mysql-ported-repositories.ts` | The repositories moved so far, and what each is held to             |
+| `mysql-porting-report.ts`      | The counts `pnpm dialect:report` prints                             |

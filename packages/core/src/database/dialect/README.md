@@ -57,7 +57,7 @@ export async function listSiteFontRows(database: DatabaseOrTransaction, tenantId
 | `nulls last`                             | `orderNullsLast`                                    |
 | `to_char(... at time zone 'UTC', ...)`   | `utcDay`                                            |
 | `... - make_interval(days => ...)`       | `daysBefore`                                        |
-| checking for error code `23505`          | `isUniqueViolation`                                 |
+| checking for error code `23505`          | `isUniqueViolation`, in `../database-errors.ts`     |
 
 ## The one type lie, and what keeps it honest
 
@@ -102,6 +102,6 @@ To remember when moving a query:
 | `writes.ts`           | `returning`, upserts and insert-if-new on each database      |
 | `reads.ts`            | The newest row of each group                                 |
 | `expressions.ts`      | JSON, lists, case, counting, ordering and date maths         |
-| `database-errors.ts`  | What a failed write means, on each database                  |
+| `database-errors.ts`  | How each database reports a broken unique key                |
 | `mysql-database.ts`   | Opening MySQL and MariaDB (only the dialect tests do so far) |
 | `mysql-schema.cjs`    | Every table in MySQL's form, for drizzle-kit                 |

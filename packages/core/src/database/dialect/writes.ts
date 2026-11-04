@@ -10,7 +10,8 @@ import type {
 import type { SelectResultFields } from "drizzle-orm/query-builders/select.types";
 import type { DatabaseOrTransaction } from "../client.js";
 import { capabilitiesOf } from "./database-dialect.js";
-import { isUniqueViolation, uniqueKeyInViolation } from "./database-errors.js";
+import { isUniqueViolation } from "../database-errors.js";
+import { uniqueKeyInViolation } from "./database-errors.js";
 
 /**
  * The writes that differ between databases. Each takes the pieces of the Drizzle chain it

@@ -49,7 +49,8 @@ describe("Postgres-only code", () => {
        sql\`select pg_advisory_xact_lock(1)\`;
        sql\`\${a} desc nulls last\`;
        sql\`to_char(\${a}, 'YYYY')\`;
-       sql\`\${a} = any(\${b})\`;`,
+       sql\`\${a} = any(\${b})\`;
+       findErrorCode(error) === "23505";`,
     );
     expect(found).toMatchObject({
       ilike: 1,
@@ -63,6 +64,7 @@ describe("Postgres-only code", () => {
       "nulls ordering": 1,
       "date function": 1,
       "array function": 1,
+      "postgres error code": 1,
     });
   });
 

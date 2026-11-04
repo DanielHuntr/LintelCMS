@@ -7,7 +7,7 @@ import { describeOnEveryDatabase } from "../../testing/every-database.js";
 import { dashboardLayoutsTable } from "../../dashboard/dashboard.table.js";
 import { blueprintsTable } from "../../blueprints/blueprints.table.js";
 import type { Database } from "../client.js";
-import { isUniqueViolation } from "./database-errors.js";
+import { isUniqueViolation } from "../database-errors.js";
 import { capabilitiesOf, dialectOf } from "./database-dialect.js";
 import {
   countWhere,

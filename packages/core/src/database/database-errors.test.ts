@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { describeDatabaseError, targetFromUrl } from "./database-errors.js";
+import { describeDatabaseError, isUniqueViolation, targetFromUrl } from "./database-errors.js";
 import { checkPostgresConnection } from "./postgres-database.js";
 
 const target = { host: "localhost", port: 5432, database: "lintel", user: "lintel" };
@@ -114,5 +114,21 @@ describe("targetFromUrl", () => {
       database: "my site",
       user: "ana@work",
     });
+  });
+});
+
+describe("isUniqueViolation", () => {
+  const wrapped = (cause: Error) => new Error("Failed query", { cause });
+
+  it("knows what Postgres and MySQL each call a broken unique key", () => {
+    const postgres = Object.assign(new Error("duplicate key"), { code: "23505" });
+    const mysql = Object.assign(new Error("Duplicate entry 'a' for key 'users.email_unique'"), {
+      code: "ER_DUP_ENTRY",
+    });
+    expect(isUniqueViolation(wrapped(postgres))).toBe(true);
+    expect(isUniqueViolation(wrapped(mysql))).toBe(true);
+    expect(isUniqueViolation(wrapped(mysql), "email_unique")).toBe(true);
+    expect(isUniqueViolation(wrapped(mysql), "other_unique")).toBe(false);
+    expect(isUniqueViolation(new Error("Something else"))).toBe(false);
   });
 });

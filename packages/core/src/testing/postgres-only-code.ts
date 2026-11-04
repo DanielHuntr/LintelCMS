@@ -106,6 +106,7 @@ export function postgresOnlyCodeIn(fileName: string, source: string): Record<str
     if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier)) {
       visitImport(node);
     }
+    if (ts.isStringLiteral(node) && /^23\d{3}$/.test(node.text)) count("postgres error code");
     ts.forEachChild(node, visit);
   }
 

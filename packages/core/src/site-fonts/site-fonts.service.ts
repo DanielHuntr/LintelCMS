@@ -8,7 +8,7 @@ import {
 } from "@lintel/builder-model";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { DEFAULT_TENANT_ID } from "../database/columns.js";
-import { findErrorCode } from "../database/database-errors.js";
+import { isUniqueViolation } from "../database/database-errors.js";
 import {
   AssetNotFoundError,
   type AssetUsage,
@@ -248,7 +248,7 @@ export async function insertNewSiteFont(
       return insertSiteFontRow(transaction, row);
     });
   } catch (error) {
-    if (findErrorCode(error) === "23505") throw new SiteFontNameTakenError(row.family);
+    if (isUniqueViolation(error)) throw new SiteFontNameTakenError(row.family);
     throw error;
   }
 }
